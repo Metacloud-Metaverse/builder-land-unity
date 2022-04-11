@@ -14,7 +14,8 @@ namespace AssetPacks
         public Transform parentOfInstances;
         private AssetPacksData _data;
         private AssetPack[] _assetPacks;
-
+        private Color _outlineColor = new Color(1, 0.6f, 0);
+        private float _outlineWidth = 5f;
         public const int ASSET_TYPE_TEXTURE = 0;
         public const int ASSET_TYPE_MESH = 1;
 
@@ -22,7 +23,7 @@ namespace AssetPacks
         {
             GetUserAssetPacksData();
             DownloadAssetPack();
-            Invoke("PrintAssetPacks", 5);
+            Invoke("PrintAssetPacks", 5); //testing only
         }
 
         public void DownloadAssetPack()
@@ -67,7 +68,15 @@ namespace AssetPacks
                 var data = go.AddComponent<Data>();
                 data.url = url;
                 go.transform.parent = null;
+                go.tag = "Selectable";
+                var collider = go.AddComponent<MeshCollider>();
+                collider.sharedMesh = go.transform.GetChild(0).gameObject.GetComponent<MeshFilter>().mesh;
+                var outline = go.AddComponent<Outline>();
+                outline.OutlineColor = _outlineColor;
+                outline.enabled = false;
+                outline.OutlineWidth = _outlineWidth;
                 assetPack.AddAsset(go, sectionName);
+
             }
             else
                 Debug.LogError("An error occurred while trying to download the gltf from " + url);       
