@@ -14,7 +14,6 @@ namespace AssetPacks
         public delegate void Callback();
 
         public TextAsset json; //Testing only
-        public Thumbnail thumbnail; //Testing only
         public Transform parentOfInstances;
         public bool isDownloading { get; private set; }
 
@@ -22,6 +21,7 @@ namespace AssetPacks
         private AssetPacksData _data;
         private AssetPack[] _assetPacks;
         public AssetPack[] assetPacks { get { return _assetPacks; } }
+        public bool[] assetPacksDownloaded { get; private set; }
         private Color _outlineColor = new Color(1, 0.6f, 0);
         private float _outlineWidth = 5f;
         private static AssetPackManager _instance;
@@ -43,9 +43,39 @@ namespace AssetPacks
             //DownloadAssetPack(0);
         }
 
+        public async void DownloadAssetPacksImages(Callback callback = null)
+        {
+            for (int i = 0; i < assetPacks.Length; i++)
+            {
+                await DownloadAssetPackImage(_data.assetPacks[i].image, assetPacks[i]);           
+            }
+
+            if(callback != null)
+                callback();
+        }
+
+        private async Task DownloadAssetPackImage(string url, AssetPack assetPack)
+        {
+            var www = UnityWebRequestTexture.GetTexture(url);
+            await www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.Log(www.error);
+            }
+            else
+            {
+                var texture = ((DownloadHandlerTexture)www.downloadHandler).texture;
+                var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                print(sprite);
+                assetPack.image = sprite;
+            }
+        }
+
         public void CreateAssetPackStructure()
         {
             _assetPacks = new AssetPack[_data.assetPacks.Length];
+            assetPacksDownloaded = new bool[_data.assetPacks.Length];
 
             for (int i = 0; i < _assetPacks.Length; i++)
             {
@@ -53,7 +83,6 @@ namespace AssetPacks
                 _assetPacks[i].name = _data.assetPacks[i].name;
                 foreach (var section in _data.assetPacks[i].sections)
                 {
-                    print(section);
                     _assetPacks[i].AddSection(section);
                 }
             }
@@ -85,16 +114,11 @@ namespace AssetPacks
                         break;
                 }
             }
-            print("download finish");
+            assetPacksDownloaded[i] = true;
             if(callback != null)
                 callback();
-            //_assetPacks[i].CallHooks();
+        }
 
-        }
-        public void SpawnAsset()
-        {
-            SpawnAsset(0, 0, 0);
-        }
 
         public void SpawnAsset(int assetPackIndex, int sectionIndex, int assetIndex)
         {
@@ -102,7 +126,6 @@ namespace AssetPacks
             var go = Instantiate(prefab);
             go.SetActive(true);
             go.tag = "Selectable";
-            print(_assetPacks[assetPackIndex].sections[sectionIndex].assets[assetIndex].GetType());
         }
 
         private async Task DownloadGLTF(string url, AssetPack assetPack, string sectionName)
@@ -119,11 +142,14 @@ namespace AssetPacks
                 var data = go.AddComponent<Data>();
                 data.url = url;
                 go.transform.parent = null;
-
-                //go.tag = "Selectable";
                 
                 var collider = go.AddComponent<MeshCollider>();
-                collider.sharedMesh = go.transform.GetChild(0).gameObject.GetComponent<MeshFilter>().mesh;
+                var filter = go.transform.GetChild(0).gameObject.GetComponentInChildren<MeshFilter>();
+                if(filter == null)          
+                    collider.sharedMesh = go.transform.GetChild(0).gameObject.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
+                
+                else
+                    collider.sharedMesh = filter.mesh;
 
                 var outline = go.AddComponent<Outline>();
                 outline.OutlineColor = _outlineColor;
@@ -133,8 +159,6 @@ namespace AssetPacks
                 go.SetActive(false);
 
                 assetPack.AddAsset(go, sectionName);
-
-                //thumbnail.SetTexture(go.transform);
             }
             else
             {
@@ -155,26 +179,10 @@ namespace AssetPacks
             else
             {
                 Texture2D myTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
-                thumbnail.SetTexture(myTexture);
                 assetPack.AddAsset(myTexture, sectionName);
             }
         }
 
-        IEnumerator GetTexture(string url, AssetPack assetPack, string sectionName)
-        {
-            UnityWebRequest www = UnityWebRequestTexture.GetTexture(url);
-            yield return www.SendWebRequest();
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.Log(www.error);
-            }
-            else
-            {
-                Texture2D myTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
-                assetPack.AddAsset(myTexture, sectionName);
-            }
-        }
 
         public void GetUserAssetPacksData()
         {

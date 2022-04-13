@@ -1,15 +1,17 @@
 {
     "assetPacks": [
         {
-            "name": "Test",
-            "urls": [ "http://localhost:8888/gltf/tree.glb", "http://localhost:8888/textures/tiles.jpeg" ],
+            "name": "Park",
+            "image": "http://localhost:8888/textures/park.png",
+            "urls": [ "http://localhost:8888/gltf/tree.glb", "http://localhost:8888/textures/grass.jpeg" ],
             "sections": [ "Nature", "Ground" ],
             "types": [ 1, 0 ]
         },
         {
-            "name": "Test 2",
-            "urls": [ "http://localhost:8888/gltf/tree.glb", "http://localhost:8888/textures/tiles.jpeg" ],
-            "sections": [ "Nature", "Ground" ],
+            "name": "Test",
+            "image": "http://localhost:8888/textures/image.png",
+            "urls": [ "http://localhost:8888/gltf/gnark.gltf", "http://localhost:8888/textures/tiles.jpeg" ],
+            "sections": [ "Characters", "Ground" ],
             "types": [ 1, 0 ]
         }
     ]

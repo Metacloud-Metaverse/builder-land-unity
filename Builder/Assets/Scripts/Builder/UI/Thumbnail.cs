@@ -3,7 +3,8 @@ using UnityEngine.UI;
 
 public class Thumbnail : MonoBehaviour
 {
-    public Image thumbnail;  
+    public Image thumbnail;
+    public Button button;
 
     public void SetTexture(Texture2D texture)
     {
