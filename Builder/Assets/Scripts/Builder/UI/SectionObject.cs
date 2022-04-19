@@ -8,4 +8,6 @@ public class SectionObject : MonoBehaviour
     public Text title;
     public List<Thumbnail> thumbnails;
     public RectTransform thumbnailsParent;
+    public RectTransform titleTransform;
+    public GridLayoutGroup thumbnailGrid;
 }

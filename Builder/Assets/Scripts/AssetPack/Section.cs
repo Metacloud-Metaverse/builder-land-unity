@@ -8,5 +8,6 @@ namespace AssetPacks
     {
         public string name;
         public List<object> assets = new List<object>();
+        public List<string> urls = new List<string>();
     }
 }

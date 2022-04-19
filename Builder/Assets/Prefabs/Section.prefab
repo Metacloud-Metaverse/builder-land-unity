@@ -115,6 +115,8 @@ MonoBehaviour:
   title: {fileID: 2399673884000464802}
   thumbnails: []
   thumbnailsParent: {fileID: 2399673883113468628}
+  titleTransform: {fileID: 2399673884000464803}
+  thumbnailGrid: {fileID: 2399673883113468627}
 --- !u!1 &2399673884000464804
 GameObject:
   m_ObjectHideFlags: 0

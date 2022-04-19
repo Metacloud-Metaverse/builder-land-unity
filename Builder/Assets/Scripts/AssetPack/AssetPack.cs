@@ -27,7 +27,7 @@ namespace AssetPacks
             return null;
         }
 
-        public void AddAsset(object asset, string sectionName)
+        public void AddAsset(object asset, string sectionName, string url)
         {
             Section section;
             if(SectionExists(sectionName))
@@ -39,6 +39,7 @@ namespace AssetPacks
                 section = AddSection(sectionName);
             }
             section.assets.Add(asset);
+            section.urls.Add(url);
         }
 
         public Section AddSection(string sectionName)

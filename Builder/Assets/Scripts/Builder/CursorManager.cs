@@ -11,6 +11,7 @@ public class CursorManager : MonoBehaviour
     public Texture2D rotationCursor;
     public Vector2 rotationCursorHotspot = new Vector2(0, 0);
     private CursorMode cursorMode = CursorMode.Auto;
+    
     private static CursorManager _instance;
     public static CursorManager instance { get { return _instance; } }
 
@@ -39,6 +40,11 @@ public class CursorManager : MonoBehaviour
     public void SetRotationCursor()
     {
         Cursor.SetCursor(rotationCursor, rotationCursorHotspot, cursorMode);
+    }
+
+    public bool IsInEditorScreen()
+    {
+        return (Input.mousePosition.x / Screen.width < 0.7) ? true : false;
     }
 
 }

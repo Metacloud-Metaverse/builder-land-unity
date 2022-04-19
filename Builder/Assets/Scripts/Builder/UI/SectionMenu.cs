@@ -12,12 +12,7 @@ public class SectionMenu : MonoBehaviour
     public RectTransform sectionsContainer;
     private List<SectionObject> _sectionObjects = new List<SectionObject>();
     public int selectedAssetPack;
-
-    private void Start()
-    {
-        //CreateMenu(0);
-        //_assetPackManager = AssetPackManager.instance;
-    }
+    public ContentSizeFitter contentSizeFitter;
 
 
     public void CreateMenu(int assetPackIndex)
@@ -33,6 +28,14 @@ public class SectionMenu : MonoBehaviour
         {
             CreateButtons();
         }
+        Invoke("FixContentSizeFitter", 1f); //workaround. El componente content size fitter hace que se solapen los dos ultimos elementos del vertical layout group
+    }
+
+    private void FixContentSizeFitter()
+    {
+        contentSizeFitter.enabled = true;
+        contentSizeFitter.enabled = false;
+        contentSizeFitter.enabled = true;
     }
 
     private void CreateButtons()
@@ -67,7 +70,7 @@ public class SectionMenu : MonoBehaviour
                 {
                     var texture = (Texture2D)assets[j];
                     thumbnail.SetTexture(texture);
-                    print(SceneManagement.instance);
+                    
                     thumbnail.button.onClick.AddListener(
                         delegate { SceneManagement.instance.SetFloorTexture(texture); });
 
@@ -75,13 +78,25 @@ public class SectionMenu : MonoBehaviour
                 sectionObject.thumbnails.Add(thumbnail);
 
             }
+            var transforms = sectionObject.thumbnailGrid.GetComponentsInChildren<RectTransform>();
+            int rowCount = 0;
+            if (transforms.Length > 1)
+            {
+                var firstPosition = transforms[1].anchoredPosition;
+                for (int j = 1; j < transforms.Length; j++)
+                {
+                    if (transforms[j].anchoredPosition.x == firstPosition.x)
+                        rowCount++;
+                }
+            }
+            var rt = sectionObject.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x, sectionObject.thumbnailGrid.cellSize.y * rowCount + sectionObject.titleTransform.sizeDelta.y);
             _sectionObjects.Add(sectionObject);
         }
     }
 
     private void DeleteSections()
     {
-        print("delete");
         foreach (var section in _sectionObjects)
         {
             Destroy(section.gameObject);
@@ -92,6 +107,7 @@ public class SectionMenu : MonoBehaviour
     private void OnDisable()
     {
         DeleteSections();
+        contentSizeFitter.enabled = false;
     }
 
     private void OnEnable()

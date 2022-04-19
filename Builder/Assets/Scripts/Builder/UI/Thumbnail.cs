@@ -5,6 +5,7 @@ public class Thumbnail : MonoBehaviour
 {
     public Image thumbnail;
     public Button button;
+    public string url;
 
     public void SetTexture(Texture2D texture)
     {

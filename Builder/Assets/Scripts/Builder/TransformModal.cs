@@ -131,8 +131,5 @@ public class TransformModal : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         sclX.text = target.localScale.x.ToString();
         sclY.text = target.localScale.y.ToString();
         sclZ.text = target.localScale.z.ToString();
-
-
-
     }
 }

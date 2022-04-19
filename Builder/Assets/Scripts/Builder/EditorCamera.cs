@@ -13,6 +13,8 @@ public class EditorCamera : MonoBehaviour
 
     void Update()
     {
+        if (!CursorManager.instance.IsInEditorScreen()) return;
+
         _horizontal = Input.GetAxis("Mouse X");
         _vertical = Input.GetAxis("Mouse Y");
         _scroll = Input.GetAxis("Mouse ScrollWheel");

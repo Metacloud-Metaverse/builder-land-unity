@@ -28,6 +28,7 @@ namespace AssetPacks
         public static AssetPackManager instance { get { return _instance; } }
         public const int ASSET_TYPE_TEXTURE = 0;
         public const int ASSET_TYPE_MESH = 1;
+        private string _connectionToServerFailedMessage = "The connection to the server could not be established. Try again later.";
 
         private void Awake()
         {
@@ -62,12 +63,12 @@ namespace AssetPacks
             if (www.result != UnityWebRequest.Result.Success)
             {
                 Debug.Log(www.error);
+                FeedbackLabel.instance.ShowError(_connectionToServerFailedMessage);
             }
             else
             {
                 var texture = ((DownloadHandlerTexture)www.downloadHandler).texture;
                 var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                print(sprite);
                 assetPack.image = sprite;
             }
         }
@@ -142,30 +143,62 @@ namespace AssetPacks
                 var data = go.AddComponent<Data>();
                 data.url = url;
                 go.transform.parent = null;
-                
-                var collider = go.AddComponent<MeshCollider>();
-                var filter = go.transform.GetChild(0).gameObject.GetComponentInChildren<MeshFilter>();
-                if(filter == null)          
-                    collider.sharedMesh = go.transform.GetChild(0).gameObject.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
-                
-                else
-                    collider.sharedMesh = filter.mesh;
+
+                AddColliders(go);
 
                 var outline = go.AddComponent<Outline>();
                 outline.OutlineColor = _outlineColor;
                 outline.enabled = false;
                 outline.OutlineWidth = _outlineWidth;
 
+                go.AddComponent<PositionRestriction>();
+
+                go.layer = Layers.SELECTABLE;
+
                 go.SetActive(false);
 
-                assetPack.AddAsset(go, sectionName);
+                assetPack.AddAsset(go, sectionName, url);
             }
             else
             {
                 Debug.LogError("An error occurred while trying to download the gltf from " + url);
+                FeedbackLabel.instance.ShowError(_connectionToServerFailedMessage);
             }
         }
 
+        private void AddColliders(GameObject go)
+        {
+            var filters = go.transform.GetChild(0).gameObject.GetComponentsInChildren<MeshFilter>();
+
+            if (filters.Length > 0)
+            {
+                for (int i = 0; i < filters.Length; i++)
+                {
+                    var collider = go.AddComponent<MeshCollider>();
+                    collider.sharedMesh = filters[i].mesh;
+                }
+
+                var renderers = go.transform.GetChild(0).gameObject.GetComponentsInChildren<Renderer>();
+                var boundBoxObject = new GameObject("Bound box");
+                boundBoxObject.transform.SetParent(go.transform);
+                boundBoxObject.transform.localPosition = Vector3.zero;
+                boundBoxObject.layer = Layers.BOUND_BOX;
+                var boundBox = boundBoxObject.AddComponent<BoundBox>();
+                boundBox.Initialize(renderers);
+            }
+            else
+            {       
+                var renderers = go.transform.GetChild(0).gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    var collider = go.AddComponent<BoxCollider>();
+                    collider.center = renderers[i].bounds.center;
+                    collider.size = renderers[i].bounds.size;
+
+                }
+            }
+
+        }
 
         private async Task DownloadTexture(string url, AssetPack assetPack, string sectionName)
         {
@@ -175,11 +208,12 @@ namespace AssetPacks
             if (www.result != UnityWebRequest.Result.Success)
             {
                 Debug.Log(www.error);
+                FeedbackLabel.instance.ShowError(_connectionToServerFailedMessage);
             }
             else
             {
                 Texture2D myTexture = ((DownloadHandlerTexture)www.downloadHandler).texture;
-                assetPack.AddAsset(myTexture, sectionName);
+                assetPack.AddAsset(myTexture, sectionName, url);
             }
         }
 
@@ -204,6 +238,22 @@ namespace AssetPacks
                 }
                 print("=========================");
             }
+        }
+
+        public string GetUrl(object asset)
+        {
+            foreach (var assetPack in _assetPacks)
+            {
+                for (int i = 0; i < assetPack.sections.Count; i++)
+                {
+                    for (int j = 0; j < assetPack.sections[i].assets.Count; j++)
+                    {
+                        if (asset == assetPack.sections[i].assets[j])
+                            return assetPack.sections[i].urls[j];
+                    }
+                }
+            }
+            return null;
         }
     }
 }
