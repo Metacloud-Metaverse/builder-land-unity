@@ -10,14 +10,12 @@ namespace AssetPacks
 {
     public class AssetPackManager : MonoBehaviour
     {
-        public delegate void Hook();
         public delegate void Callback();
 
         public TextAsset json; //Testing only
         public Transform parentOfInstances;
         public bool isDownloading { get; private set; }
 
-        private List<Hook> _downloadFinishedHooks = new List<Hook>();
         private AssetPacksData _data;
         private AssetPack[] _assetPacks;
         public AssetPack[] assetPacks { get { return _assetPacks; } }
@@ -178,26 +176,29 @@ namespace AssetPacks
                     collider.sharedMesh = filters[i].mesh;
                 }
 
-                var renderers = go.transform.GetChild(0).gameObject.GetComponentsInChildren<Renderer>();
-                var boundBoxObject = new GameObject("Bound box");
-                boundBoxObject.transform.SetParent(go.transform);
-                boundBoxObject.transform.localPosition = Vector3.zero;
-                boundBoxObject.layer = Layers.BOUND_BOX;
-                var boundBox = boundBoxObject.AddComponent<BoundBox>();
-                boundBox.Initialize(renderers);
+
+                //var renderers = go.transform.GetChild(0).gameObject.GetComponentsInChildren<Renderer>();
+                //var boundBoxObject = new GameObject("Bound box");
+                //boundBoxObject.transform.SetParent(go.transform);
+                //boundBoxObject.transform.localPosition = Vector3.zero;
+                //boundBoxObject.layer = Layers.BOUND_BOX;
+                //var boundBox = boundBoxObject.AddComponent<BoundBox>();
+                //boundBox.Initialize(renderers);
             }
             else
-            {       
+            {
+                
                 var renderers = go.transform.GetChild(0).gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-                for (int i = 0; i < renderers.Length; i++)
+                var colliders = new BoxCollider[renderers.Length];
+                for (int i = 0; i < colliders.Length; i++)
                 {
                     var collider = go.AddComponent<BoxCollider>();
-                    collider.center = renderers[i].bounds.center;
-                    collider.size = renderers[i].bounds.size;
-
+                    colliders[i] = collider;
                 }
+                var resizeable = go.AddComponent<ResizeableBoxCollider>();
+                resizeable.colliders = colliders;
+                resizeable.renderers = renderers;
             }
-
         }
 
         private async Task DownloadTexture(string url, AssetPack assetPack, string sectionName)

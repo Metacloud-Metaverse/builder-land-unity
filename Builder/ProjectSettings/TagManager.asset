@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Selectable
   - Wall
+  - Bound box
   layers:
   - Default
   - TransparentFX

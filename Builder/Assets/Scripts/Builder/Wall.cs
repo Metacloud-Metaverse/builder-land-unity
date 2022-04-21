@@ -6,18 +6,18 @@ public class Wall : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        if(other.tag == "Bound box")
+        if(other.tag == "Selectable")
         {
-            var restriction = other.GetComponentInParent<PositionRestriction>();
+            var restriction = other.GetComponent<PositionRestriction>();
             restriction.AddCollisionedWall(this);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.tag == "Bound box")
+        if (other.tag == "Selectable")
         {
-            var restriction = other.GetComponentInParent<PositionRestriction>();
+            var restriction = other.GetComponent<PositionRestriction>();
             restriction.RemoveCollisionedWall(this);
         }
     }

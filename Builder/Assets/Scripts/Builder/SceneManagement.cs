@@ -17,17 +17,51 @@ public class SceneManagement : MonoBehaviour
     public string sceneName = "Untitled";
     private List<List<MeshRenderer>> _chunksRenderers = new List<List<MeshRenderer>>();
     private Texture2D _currentGroundTexture;
-    public float maxHeight;
+    public float maxHeightCoef = 20;
+    public float maxHeight { get; private set; }
+    public int maxTriangles = 10000;
+    public int maxMeshes = 300;
+    private int _maxMaterials;
+    public int maxMaterials
+    {
+        get { return _maxMaterials; }
+        set { _maxMaterials = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value); }
+    }
+    public int maxMaterialsCoef = 20;
+    private int _maxTextures;
+    public int maxTextures
+    {
+        get { return _maxTextures; }
+        set { _maxTextures = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value); }
+
+    }
+    public int maxTexturesCoef = 10;
+
+    private int _trianglesCount;
+    private int _meshesCount;
+    private int _materialsCount;
+    private int _texturesCount;
 
     private void Awake()
     {
         if (_instance == null) _instance = this;
         else
             Debug.LogError("There are more than one scene managemente in the scene");
+
+        SetMaxHeight();
+        maxMaterials = maxMaterialsCoef;
+        maxTextures = maxTexturesCoef;
     }
 
 
     private void Start()
+    {
+        CreateChunks();
+        SetCameraPosition();
+        CreateWalls();
+    }
+
+    private void CreateChunks()
     {
         float x = 0;
         float y = 0;
@@ -47,7 +81,10 @@ public class SceneManagement : MonoBehaviour
             z += chunkSize.z;
             _chunksRenderers.Add(row);
         }
+    }
 
+    private void SetCameraPosition()
+    {
         var pos = editorCamera.transform.position;
         var multiplier = chunks.x - 1;
         var coef = new Vector3(1.46f, 0.71f, 0.12f) * multiplier;
@@ -56,10 +93,12 @@ public class SceneManagement : MonoBehaviour
             pos.y + pos.y * coef.y,
             pos.z + pos.z * coef.z
         );
-
-        CreateWalls();
     }
 
+    private void SetMaxHeight()
+    {
+        maxHeight = Mathf.Log((chunks.x * chunks.y) + 1, 2) * maxHeightCoef;
+    }
 
     private void Update()
     {
@@ -68,7 +107,7 @@ public class SceneManagement : MonoBehaviour
             RaycastHit hit;
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             int layerMask = 1 << Layers.SELECTABLE;
-            
+
             if (Physics.Raycast(ray, out hit, 1000, layerMask))
             {
                 print(hit.transform.gameObject.name);
@@ -92,7 +131,7 @@ public class SceneManagement : MonoBehaviour
             else
             {
                 UnselectObject();
-            }    
+            }
         }
     }
 
@@ -101,6 +140,8 @@ public class SceneManagement : MonoBehaviour
     {
         if (TransformModal.instance != null && !TransformModal.instance.isMouseInside)
         {
+            print(_selectedObjectOutline);
+
             if (_selectedObjectOutline != null)
                 _selectedObjectOutline.enabled = false;
             transformModal.gameObject.SetActive(false);
@@ -137,6 +178,10 @@ public class SceneManagement : MonoBehaviour
 
     public void Save()
     {
+        if(!ValidateCounts())
+        {
+            FeedbackLabel.instance.ShowError("There are too many elements in the scene.");
+        }
         var gameObjects = GameObject.FindGameObjectsWithTag("Selectable");
         var correctGameObjects = GetCorrectGameObjects(gameObjects);
         var data = new SceneData();
@@ -149,7 +194,7 @@ public class SceneManagement : MonoBehaviour
             var go = correctGameObjects[i];
             var objectData = new SceneObjectData();
             var dataComponent = go.GetComponent<Data>();
-            
+
             dataComponent.SetChunkParent();
 
             objectData.positionX = go.transform.localPosition.x;
@@ -184,7 +229,7 @@ public class SceneManagement : MonoBehaviour
             if (!go.GetComponent<PositionRestriction>().isProhibited)
                 correctGameObjects.Add(go);
         }
-        
+
         return correctGameObjects;
     }
 
@@ -223,6 +268,22 @@ public class SceneManagement : MonoBehaviour
             Vector3.zero,
             new Vector3(0.5f, 0.5f, 0)
         );
+
+        CreateWall(
+            "Wall B",
+            new Vector3(chunkSize.x / 2 * (chunks.x - 1), 0, chunkSize.z / 2 * (chunks.y - 1)),
+            new Vector3(chunkSize.x * chunks.x, 1, chunkSize.z * chunks.y),
+            Vector3.zero,
+            new Vector3(0, -0.5f, 0)
+        );
+
+        CreateWall(
+            "Wall U",
+            new Vector3(chunkSize.x / 2 * (chunks.x - 1), maxHeight, chunkSize.z / 2 * (chunks.y - 1)),
+            new Vector3(chunkSize.x * chunks.x, 1, chunkSize.z * chunks.y),
+            Vector3.zero,
+            new Vector3(0, 0.5f, 0)
+        );
     }
 
     private void CreateWall(string name, Vector3 position, Vector3 scale, Vector3 rotation, Vector3 center)
@@ -241,5 +302,101 @@ public class SceneManagement : MonoBehaviour
 
         var rb = wall.AddComponent<Rigidbody>();
         rb.isKinematic = true;
+    }
+
+    public int GetTrianglesCount(GameObject[] selectables = null)
+    {
+        if (selectables == null) selectables = GameObject.FindGameObjectsWithTag("Selectable");
+        int triangles = 0;
+
+        foreach (var selectable in selectables)
+        {
+            var meshFilters = selectable.GetComponentsInChildren<MeshFilter>();
+            foreach (var meshFilter in meshFilters)
+            {
+                triangles += meshFilter.mesh.triangles.Length;
+            }
+
+            var renderers = selectable.GetComponentsInChildren<SkinnedMeshRenderer>();
+
+            foreach (var renderer in renderers)
+            {
+                triangles += renderer.sharedMesh.triangles.Length;
+            }
+        }
+
+        return triangles;
+    }
+
+    public int GetMeshesCount(GameObject[] selectables = null)
+    {
+        if (selectables == null) selectables = GameObject.FindGameObjectsWithTag("Selectable");
+
+        int meshesCount = 0;
+        foreach (var selectable in selectables)
+        {
+            var meshFilters = selectable.GetComponentsInChildren<MeshFilter>();
+            foreach (var meshFilter in meshFilters)
+            {
+                meshesCount++;
+            }
+
+            var renderers = selectable.GetComponentsInChildren<SkinnedMeshRenderer>();
+
+            foreach (var renderer in renderers)
+            {
+                meshesCount++;
+            }
+        }
+
+        return meshesCount;
+    }
+
+    public int GetTexturesCount(GameObject[] selectables = null)
+    {
+        if (selectables == null) selectables = GameObject.FindGameObjectsWithTag("Selectable");
+        int textureCount = 0;
+        foreach (var selectable in selectables)
+        {
+            var renderers = selectable.GetComponentsInChildren<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                var nameIds = renderer.material.GetTexturePropertyNameIDs();
+                foreach (var nameId in nameIds)
+                {
+                    var tex = renderer.material.GetTexture(nameId);
+                    if (tex != null)
+                        textureCount++;
+                }       
+            }
+        }
+        return textureCount;
+    }
+
+    public int GetMaterialsCount(GameObject[] selectables = null)
+    {
+        if (selectables == null) selectables = GameObject.FindGameObjectsWithTag("Selectable");
+        int materialsCount = 0;
+
+        foreach (var selectable in selectables)
+        {
+            var renderers = selectable.GetComponentsInChildren<Renderer>();
+            materialsCount += renderers.Length;
+        }
+
+        return materialsCount;
+    }
+
+    public bool ValidateCounts()
+    {
+        var selectables = GameObject.FindGameObjectsWithTag("Selectable");
+
+        if (GetTrianglesCount(selectables) <= maxTriangles &&
+            GetMeshesCount   (selectables) <= maxMeshes    &&
+            GetMaterialsCount(selectables) <= maxMaterials &&
+            GetTexturesCount (selectables) <= maxTextures)
+            return true;
+
+        return false;
     }
 }

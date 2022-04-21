@@ -7,14 +7,11 @@ using UnityEngine.UI;
 public class BuilderUI : MonoBehaviour
 {
     private AssetPackManager _apm;
+    private bool _sceneCountActive;
 
     public AssetPackMenu assetPackMenu;
     public SectionMenu sectionMenu;
-
-    //private void Awake()
-    //{
-    //    assetPackMenu.buttonListener = ShowSectionMenu;
-    //}
+    public SceneCounts sceneCountsPopup;
 
     public void ShowAssetPackMenu()
     {
@@ -32,5 +29,13 @@ public class BuilderUI : MonoBehaviour
 
         sectionMenu.gameObject.SetActive(true);
         sectionMenu.enabled = true;
+    }
+
+    public void SwitchSceneCountPopUp()
+    {
+        _sceneCountActive = !_sceneCountActive;
+        sceneCountsPopup.gameObject.SetActive(_sceneCountActive);
+        if (_sceneCountActive)
+            sceneCountsPopup.RefreshCounts();
     }
 }

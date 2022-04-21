@@ -2,20 +2,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ResizeableBoxCollider
+public class ResizeableBoxCollider: MonoBehaviour
 {
-    public BoxCollider collider;
-    public SkinnedMeshRenderer renderer;
+    public BoxCollider[] colliders;
+    public SkinnedMeshRenderer[] renderers;
 
-    public ResizeableBoxCollider(BoxCollider collider, SkinnedMeshRenderer renderer)
+    public void Update()
     {
-        this.collider = collider;
-        this.renderer = renderer;
-    }
+        if (colliders == null || renderers == null) return;
 
-    public void Refresh()
-    {
-        collider.center = renderer.bounds.center;
-        collider.size = renderer.bounds.size;
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            colliders[i].center = renderers[i].bounds.center;
+            colliders[i].size = renderers[i].bounds.size;
+        }
     }
 }

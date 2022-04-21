@@ -13,7 +13,7 @@ public class SectionMenu : MonoBehaviour
     private List<SectionObject> _sectionObjects = new List<SectionObject>();
     public int selectedAssetPack;
     public ContentSizeFitter contentSizeFitter;
-
+    public GameObject loading;
 
     public void CreateMenu(int assetPackIndex)
     {
@@ -22,7 +22,8 @@ public class SectionMenu : MonoBehaviour
         title.text = AssetPackManager.instance.assetPacks[assetPackIndex].name;
         if (!AssetPackManager.instance.assetPacksDownloaded[assetPackIndex])
         {
-            AssetPackManager.instance.DownloadAssetPack(assetPackIndex, CreateButtons);
+            ShowLoading(true);
+            AssetPackManager.instance.DownloadAssetPack(assetPackIndex, DownloadCallback);
         }
         else
         {
@@ -36,6 +37,17 @@ public class SectionMenu : MonoBehaviour
         contentSizeFitter.enabled = true;
         contentSizeFitter.enabled = false;
         contentSizeFitter.enabled = true;
+    }
+
+    private void ShowLoading(bool show)
+    {
+        loading.SetActive(show);
+    }
+
+    private void DownloadCallback()
+    {
+        ShowLoading(false);
+        CreateButtons();
     }
 
     private void CreateButtons()
