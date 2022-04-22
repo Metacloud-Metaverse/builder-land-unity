@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using AssetPacks;
 using System.Collections.Generic;
 
-public class SectionMenu : MonoBehaviour
+public class SectionMenu : Menu
 {
     public Image image;
     public Text title;
@@ -50,7 +50,8 @@ public class SectionMenu : MonoBehaviour
         CreateButtons();
     }
 
-    private void CreateButtons()
+
+    protected override void CreateButtons()
     {
         var sections = AssetPackManager.instance.assetPacks[selectedAssetPack].sections;
         for (int i = 0; i < sections.Count; i++)
@@ -70,17 +71,17 @@ public class SectionMenu : MonoBehaviour
                 var sectionIndex = i;
                 var assetIndex = j;
 
-                if (assets[j].GetType() == typeof(GameObject))
+                if (assets[j].asset.GetType() == typeof(GameObject))
                 {
-                    var go = (GameObject)assets[j];
+                    var go = (GameObject)assets[j].asset;
                     thumbnail.SetTexture(go.transform);
                     thumbnail.button.onClick.AddListener(
                         delegate { AssetPackManager.instance.SpawnAsset(selectedAssetPack, sectionIndex, assetIndex); });
 
                 }
-                else if (assets[j].GetType() == typeof(Texture2D))
+                else if (assets[j].asset.GetType() == typeof(Texture2D))
                 {
-                    var texture = (Texture2D)assets[j];
+                    var texture = (Texture2D)assets[j].asset;
                     thumbnail.SetTexture(texture);
                     
                     thumbnail.button.onClick.AddListener(

@@ -7,7 +7,9 @@ namespace AssetPacks
     public class Section
     {
         public string name;
-        public List<object> assets = new List<object>();
-        public List<string> urls = new List<string>();
+        public List<Asset> assets = new List<Asset>();
+
+        //public List<object> assets = new List<object>();
+        //public List<string> urls = new List<string>();
     }
 }

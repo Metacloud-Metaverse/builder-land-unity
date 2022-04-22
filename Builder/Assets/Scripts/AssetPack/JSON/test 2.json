@@ -1,0 +1,48 @@
+{
+    "assetPacks": [
+        {
+            "name": "Park",
+            "image": "http://localhost:8888/textures/park.png",
+            "assets":
+            [
+                {
+                    "id":  0,
+                    "name": "Pine",
+                    "tags": [ "tree", "nature" ],
+                    "url": "http://localhost:8888/gltf/tree.glb",
+                    "section": "Nature"
+                },
+                {
+                    "id": 1,
+                    "name": "Grass",
+                    "tags": [ "ground", "nature", "floor" ],
+                    "url": "http://localhost:8888/textures/grass.jpeg",
+                    "section": "Ground"
+                }
+            ]        
+        },
+        {
+            "name": "Test",
+            "image": "http://localhost:8888/textures/image.png",
+            "assets":
+            [
+                {
+                    "id": 2,
+                    "name": "Gnark",
+                    "tags": [ "character", "pirate", "zombie" ],
+                    "url": "http://localhost:8888/gltf/gnark.gltf",
+                    "section": "Characters"
+                },
+                {
+                    "id": 3,
+                    "name": "Tile",
+                    "tags": [ "ground", "nature", "floor" ],
+                    "url": "http://localhost:8888/textures/tiles.jpeg",
+                    "section": "Ground"
+                }
+            ]
+        }
+    ]
+}
+
+

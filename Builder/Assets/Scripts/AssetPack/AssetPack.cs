@@ -8,7 +8,8 @@ namespace AssetPacks
         public string name;
         public List<Section> sections = new List<Section>();
         public Sprite image;
-        
+
+
         public bool SectionExists(string name)
         {
             foreach (var s in sections)
@@ -17,6 +18,7 @@ namespace AssetPacks
             }
             return false;
         }
+
 
         public Section GetSection(string name)
         {
@@ -27,19 +29,58 @@ namespace AssetPacks
             return null;
         }
 
-        public void AddAsset(object asset, string sectionName, string url)
+
+        public Asset AddAsset(AssetData assetData, object download)
         {
             Section section;
-            if(SectionExists(sectionName))
+            if (SectionExists(assetData.section))
             {
-                section = GetSection(sectionName);
+                section = GetSection(assetData.section);
             }
             else
             {
-                section = AddSection(sectionName);
+                section = AddSection(assetData.section);
             }
+            var asset = new Asset(
+                assetData.id,
+                download,
+                assetData.url,
+                assetData.name,
+                assetData.tags
+            );
+            
             section.assets.Add(asset);
-            section.urls.Add(url);
+
+            return asset;
+        }
+
+        public Asset GetAsset(int id)
+        {
+            foreach (var section in sections)
+            {
+                foreach (var asset in section.assets)
+                {
+                    if(asset.id == id)
+                    {
+                        return asset;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public bool ExistsAsset(AssetData data)
+        {
+            if (!SectionExists(data.section)) return false;
+
+            var assets = GetSection(data.section).assets;
+            Debug.Log("---------");
+            foreach (var asset in assets)
+            {
+                Debug.Log($"Received: {data.id}, asset: {asset.id}");
+                if (data.id == asset.id) return true;
+            }
+            return false;
         }
 
         public Section AddSection(string sectionName)

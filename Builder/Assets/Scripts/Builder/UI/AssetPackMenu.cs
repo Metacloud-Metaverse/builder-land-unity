@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using AssetPacks;
 
-public class AssetPackMenu : MonoBehaviour
+public class AssetPackMenu : Menu
 {
     public AssetPackButton assetPackButton;
     private List<AssetPackButton> _buttons = new List<AssetPackButton>();
@@ -18,7 +18,7 @@ public class AssetPackMenu : MonoBehaviour
         AssetPackManager.instance.DownloadAssetPacksImages(SetImages);
     }
 
-    private void CreateButtons()
+    protected override void CreateButtons()
     {
         var assetPacks = AssetPackManager.instance.assetPacks;
 

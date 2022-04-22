@@ -1,7 +1,7 @@
 namespace AssetPacks
 {
     [System.Serializable]
-    public class AssetPacksData 
+    public class AssetPacksArrayData
     {
         public AssetPackData[] assetPacks;
     }
