@@ -15,10 +15,9 @@ public class SectionMenu : Menu
     public ContentSizeFitter contentSizeFitter;
     public GameObject loading;
 
+
     public void CreateMenu(int assetPackIndex)
     {
-        //_selectedAssetPack = assetPackIndex;
-
         title.text = AssetPackManager.instance.assetPacks[assetPackIndex].name;
         if (!AssetPackManager.instance.assetPacksDownloaded[assetPackIndex])
         {
@@ -29,20 +28,14 @@ public class SectionMenu : Menu
         {
             CreateButtons();
         }
-        Invoke("FixContentSizeFitter", 1f); //workaround. El componente content size fitter hace que se solapen los dos ultimos elementos del vertical layout group
     }
 
-    private void FixContentSizeFitter()
-    {
-        contentSizeFitter.enabled = true;
-        contentSizeFitter.enabled = false;
-        contentSizeFitter.enabled = true;
-    }
 
     private void ShowLoading(bool show)
     {
         loading.SetActive(show);
     }
+
 
     private void DownloadCallback()
     {
@@ -83,9 +76,10 @@ public class SectionMenu : Menu
                 {
                     var texture = (Texture2D)assets[j].asset;
                     thumbnail.SetTexture(texture);
-                    
+                    int id = assets[j].id;
+
                     thumbnail.button.onClick.AddListener(
-                        delegate { SceneManagement.instance.SetFloorTexture(texture); });
+                        delegate { SceneManagement.instance.SetFloorTexture(id); });
 
                 }
                 sectionObject.thumbnails.Add(thumbnail);
@@ -106,7 +100,16 @@ public class SectionMenu : Menu
             rt.sizeDelta = new Vector2(rt.sizeDelta.x, sectionObject.thumbnailGrid.cellSize.y * rowCount + sectionObject.titleTransform.sizeDelta.y);
             _sectionObjects.Add(sectionObject);
         }
+
+        //workaround. El componente content size fitter hace que se solapen los
+        //dos ultimos elementos del vertical layout group
+
+        var fixSection = Instantiate(sectionPrefab);
+        fixSection.transform.SetParent(sectionsContainer);
+        fixSection.transform.localScale = Vector3.one;
+        fixSection.gameObject.SetActive(false);
     }
+
 
     private void DeleteSections()
     {
@@ -117,11 +120,13 @@ public class SectionMenu : Menu
         _sectionObjects.Clear();
     }
 
+
     private void OnDisable()
     {
         DeleteSections();
         contentSizeFitter.enabled = false;
     }
+
 
     private void OnEnable()
     {

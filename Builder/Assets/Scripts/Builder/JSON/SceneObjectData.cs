@@ -14,5 +14,4 @@ public class SceneObjectData
     public float scaleZ;
     public int chunkX;
     public int chunkY;
-    public string url;
 }

@@ -1,6 +1,8 @@
 using UnityEngine;
 using AssetPacks;
 using System.Collections.Generic;
+using UnityEngine.Networking;
+using System.Threading.Tasks;
 
 public class SceneManagement : MonoBehaviour
 {
@@ -16,7 +18,7 @@ public class SceneManagement : MonoBehaviour
     private AssetPackManager _apm;
     public string sceneName = "Untitled";
     private List<List<MeshRenderer>> _chunksRenderers = new List<List<MeshRenderer>>();
-    private Texture2D _currentGroundTexture;
+    private int _currentGroundId;
     public float maxHeightCoef = 20;
     public float maxHeight { get; private set; }
     public int maxTriangles = 10000;
@@ -36,11 +38,19 @@ public class SceneManagement : MonoBehaviour
 
     }
     public int maxTexturesCoef = 10;
+    public float cameraCoef = 5;
+    public Vector3 initialCameraPos
+    {
+        get { return new Vector3(chunkSize.x / 2 * -1, 7.7f, chunkSize.z / 2 * -1); }
+    }
 
     private int _trianglesCount;
     private int _meshesCount;
     private int _materialsCount;
     private int _texturesCount;
+
+    public TextAsset json; //Testing only
+    public AssetPackManager.Callback loadedSceneCallback;
 
     private void Awake()
     {
@@ -59,6 +69,7 @@ public class SceneManagement : MonoBehaviour
         CreateChunks();
         SetCameraPosition();
         CreateWalls();
+        //Invoke("Load", 6f);
     }
 
     private void CreateChunks()
@@ -83,16 +94,37 @@ public class SceneManagement : MonoBehaviour
         }
     }
 
+    private float _oneChunkYPos = 7;
     private void SetCameraPosition()
     {
-        var pos = editorCamera.transform.position;
-        var multiplier = chunks.x - 1;
-        var coef = new Vector3(1.46f, 0.71f, 0.12f) * multiplier;
-        editorCamera.transform.position = new Vector3(
-            pos.x + pos.x * coef.x,
-            pos.y + pos.y * coef.y,
-            pos.z + pos.z * coef.z
-        );
+        editorCamera.transform.position = initialCameraPos + transform.right * chunkSize.x * chunks.x;
+        editorCamera.transform.Translate(0, 0, -chunkSize.z * ((chunks.y + chunks.x) / cameraCoef));
+        if (chunks.x * chunks.y == 1)
+            editorCamera.transform.position = new Vector3(editorCamera.transform.position.x, _oneChunkYPos, editorCamera.transform.position.z);
+    }
+
+    public void ResetChunks()
+    {
+        ResetChunks(3, 2);
+    }
+
+    public void ResetChunks(int x, int y)
+    {
+        for (int i = 0; i < _chunksRenderers.Count; i++)
+        {
+            for (int j = 0; j < _chunksRenderers[i].Count; j++)
+            {
+                Destroy(_chunksRenderers[i][j].gameObject);
+            }
+            _chunksRenderers[i].Clear();
+        }
+        _chunksRenderers.Clear();
+
+        chunks.x = x;
+        chunks.y = y;
+
+        CreateChunks();
+        SetCameraPosition();
     }
 
     private void SetMaxHeight()
@@ -167,7 +199,15 @@ public class SceneManagement : MonoBehaviour
                 renderer.material.color = Color.white;
             }
         }
-        _currentGroundTexture = texture;
+    }
+
+    public void SetFloorTexture(int assetId)
+    {
+        var asset = AssetPackManager.instance.GetAsset(assetId);
+        var texture = (Texture2D)asset.asset;
+        _currentGroundId = assetId;
+
+        SetFloorTexture(texture);
     }
 
     public Transform GetChunk(int x, int y)
@@ -176,50 +216,136 @@ public class SceneManagement : MonoBehaviour
         return _chunksRenderers[y][x].transform;
     }
 
+
     public void Save()
     {
-        if(!ValidateCounts())
+        if (!ValidateCounts())
         {
             FeedbackLabel.instance.ShowError("There are too many elements in the scene.");
+            return;
         }
+
         var gameObjects = GameObject.FindGameObjectsWithTag("Selectable");
         var correctGameObjects = GetCorrectGameObjects(gameObjects);
         var data = new SceneData();
         data.name = sceneName;
-        data.ground = AssetPackManager.instance.GetUrl(_currentGroundTexture);
-        data.gameObjects = new SceneObjectData[correctGameObjects.Count];
 
-        for (int i = 0; i < correctGameObjects.Count; i++)
+        data.chunksX = chunks.x;
+        data.chunksY = chunks.y;
+
+        var textureAsset = AssetPackManager.instance.GetAsset(_currentGroundId);
+        if(textureAsset != null)
         {
-            var go = correctGameObjects[i];
-            var objectData = new SceneObjectData();
-            var dataComponent = go.GetComponent<Data>();
+            data.ground = new SharedObjectData();
+            data.ground.url = textureAsset.url;
+            data.ground.id = textureAsset.id;
+            data.ground.name = textureAsset.name;
+            data.ground.tags = textureAsset.tags;
+        }
 
-            dataComponent.SetChunkParent();
+        var dataComponents = new List<Data>();
+        foreach (var correctGameObject in correctGameObjects)
+        {
+            dataComponents.Add(correctGameObject.GetComponent<Data>());
+        }
 
-            objectData.positionX = go.transform.localPosition.x;
-            objectData.positionY = go.transform.localPosition.y;
-            objectData.positionZ = go.transform.localPosition.z;
+        var dataDictionary = CreateObjectDataDictionary(dataComponents);
+        data.sharedObjects = new SharedObjectData[dataDictionary.Count];
 
-            objectData.rotationX = go.transform.localRotation.x;
-            objectData.rotationY = go.transform.localRotation.y;
-            objectData.rotationZ = go.transform.localRotation.z;
+        int i = 0;
+        foreach (var dataList in dataDictionary)
+        {
+            var asset = AssetPackManager.instance.GetAsset(dataList.Value[0].meshId);
+            AssetPackManager.instance.PrintAssetPacks();
+            var sharedObject = new SharedObjectData
+            {
+                id = dataList.Key,
+                url = asset.url,
+                name = asset.name,
+                tags = asset.tags,
+                objectsData = new SceneObjectData[dataList.Value.Count]
+            };
 
-            objectData.scaleX = go.transform.localScale.x;
-            objectData.scaleY = go.transform.localScale.y;
-            objectData.scaleZ = go.transform.localScale.z;
+            for (int j = 0; j < dataList.Value.Count; j++)
+            {
+                var objectData = new SceneObjectData();
+                var dataComponent = dataList.Value[j];
 
-            objectData.chunkX = dataComponent.chunkX;
-            objectData.chunkY = dataComponent.chunkY;
+                dataComponent.SetChunkParent();
 
-            objectData.url = dataComponent.url;
+                objectData.positionX = dataComponent.transform.localPosition.x;
+                objectData.positionY = dataComponent.transform.localPosition.y;
+                objectData.positionZ = dataComponent.transform.localPosition.z;
 
-            data.gameObjects[i] = objectData;
+                objectData.rotationX = dataComponent.transform.localRotation.x;
+                objectData.rotationY = dataComponent.transform.localRotation.y;
+                objectData.rotationZ = dataComponent.transform.localRotation.z;
+
+                objectData.scaleX = dataComponent.transform.localScale.x;
+                objectData.scaleY = dataComponent.transform.localScale.y;
+                objectData.scaleZ = dataComponent.transform.localScale.z;
+
+                objectData.chunkX = dataComponent.chunkX;
+                objectData.chunkY = dataComponent.chunkY;
+
+                sharedObject.objectsData[j] = objectData;
+            }
+            data.sharedObjects[i] = sharedObject;
+            i++;
         }
 
         var json = JsonUtility.ToJson(data);
         print(json);
     }
+
+
+    public void Load()
+    {
+        var sceneData = JsonUtility.FromJson<SceneData>(json.text);
+        print(sceneData);
+        Load(sceneData);
+    }
+
+    private SceneData _sceneData;
+    public void Load(SceneData data)
+    {
+        _sceneData = data;
+        ResetChunks(_sceneData.chunksX, _sceneData.chunksY);
+        DestroySceneObjects();
+        AssetPackManager.instance.LoadSceneAndCreateAssetPack(data, LoadedSceneCallback);
+    }
+
+    private void DestroySceneObjects()
+    {
+        var selectables = GameObject.FindGameObjectsWithTag("Selectable");
+        foreach (var selectable in selectables)
+        {
+            Destroy(selectable);
+        }
+    }
+
+    private void LoadedSceneCallback()
+    {
+        SetFloorTexture(_sceneData.ground.id);
+        loadedSceneCallback();
+    }
+
+
+    private Dictionary<int, List<Data>> CreateObjectDataDictionary(List<Data> dataComponents)
+    {
+        var dictionary = new Dictionary<int, List<Data>>();
+
+        foreach (var data in dataComponents)
+        {
+            if (!dictionary.ContainsKey(data.meshId))
+                dictionary.Add(data.meshId, new List<Data>());
+
+            dictionary[data.meshId].Add(data);
+        }
+
+        return dictionary;
+    }
+
 
     private List<GameObject> GetCorrectGameObjects(GameObject[] gameObjects)
     {
@@ -232,6 +358,7 @@ public class SceneManagement : MonoBehaviour
 
         return correctGameObjects;
     }
+
 
     private void CreateWalls()
     {
@@ -286,6 +413,7 @@ public class SceneManagement : MonoBehaviour
         );
     }
 
+
     private void CreateWall(string name, Vector3 position, Vector3 scale, Vector3 rotation, Vector3 center)
     {
         var wall = new GameObject(name);
@@ -303,6 +431,7 @@ public class SceneManagement : MonoBehaviour
         var rb = wall.AddComponent<Rigidbody>();
         rb.isKinematic = true;
     }
+
 
     public int GetTrianglesCount(GameObject[] selectables = null)
     {
@@ -328,6 +457,7 @@ public class SceneManagement : MonoBehaviour
         return triangles;
     }
 
+
     public int GetMeshesCount(GameObject[] selectables = null)
     {
         if (selectables == null) selectables = GameObject.FindGameObjectsWithTag("Selectable");
@@ -352,6 +482,7 @@ public class SceneManagement : MonoBehaviour
         return meshesCount;
     }
 
+
     public int GetTexturesCount(GameObject[] selectables = null)
     {
         if (selectables == null) selectables = GameObject.FindGameObjectsWithTag("Selectable");
@@ -373,6 +504,7 @@ public class SceneManagement : MonoBehaviour
         return textureCount;
     }
 
+
     public int GetMaterialsCount(GameObject[] selectables = null)
     {
         if (selectables == null) selectables = GameObject.FindGameObjectsWithTag("Selectable");
@@ -386,6 +518,7 @@ public class SceneManagement : MonoBehaviour
 
         return materialsCount;
     }
+
 
     public bool ValidateCounts()
     {

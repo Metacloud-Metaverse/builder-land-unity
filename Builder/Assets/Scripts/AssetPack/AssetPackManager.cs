@@ -18,9 +18,9 @@ namespace AssetPacks
 
         private AssetPacksArrayData _data;
         public AssetPackData[] assetPacksData { get { return _data.assetPacks; } }
-        private AssetPack[] _assetPacks;
-        public AssetPack[] assetPacks { get { return _assetPacks; } }
-        public bool[] assetPacksDownloaded { get; private set; }
+        private List<AssetPack> _assetPacks = new List<AssetPack>();
+        public List<AssetPack> assetPacks { get { return _assetPacks; } }
+        public List<bool> assetPacksDownloaded { get; private set; } = new List<bool>();
         private Color _outlineColor = new Color(1, 0.6f, 0);
         private float _outlineWidth = 5f;
         private static AssetPackManager _instance;
@@ -30,6 +30,7 @@ namespace AssetPacks
         private string _connectionToServerFailedMessage = "The connection to the server could not be established. Try again later.";
         private List<Asset> _temporalAssets = new List<Asset>();
         public List<Asset> temporalAssets { get { return _temporalAssets; } }
+        public List<Data> sceneObjects { get; private set; }
 
         private void Awake()
         {
@@ -48,7 +49,7 @@ namespace AssetPacks
 
         public async void DownloadAssetPacksImages(Callback callback = null)
         {
-            for (int i = 0; i < assetPacks.Length; i++)
+            for (int i = 0; i < assetPacks.Count; i++)
             {
                 await DownloadAssetPackImage(_data.assetPacks[i].image, assetPacks[i]);           
             }
@@ -78,24 +79,42 @@ namespace AssetPacks
 
         public void CreateAssetPackStructure()
         {
-            _assetPacks = new AssetPack[_data.assetPacks.Length];
-            assetPacksDownloaded = new bool[_data.assetPacks.Length];
+            //_assetPacks = new AssetPack[_data.assetPacks.Length];
+            //assetPacksDownloaded = new bool[_data.assetPacks.Length];
 
-            for (int i = 0; i < _assetPacks.Length; i++)
+            //for (int i = 0; i < _assetPacks.Count; i++)
+            //{
+            //    _assetPacks[i] = new AssetPack();
+            //    _assetPacks[i].name = _data.assetPacks[i].name;
+            //    foreach (var asset in _data.assetPacks[i].assets)
+            //    {
+            //        _assetPacks[i].AddSection(asset.section);
+            //    }
+            //}
+
+            foreach (var dataAssetPack in _data.assetPacks)
             {
-                _assetPacks[i] = new AssetPack();
-                _assetPacks[i].name = _data.assetPacks[i].name;
-                foreach (var asset in _data.assetPacks[i].assets)
+                var assetPack = new AssetPack();
+                assetPack.name = dataAssetPack.name;
+                foreach (var asset in dataAssetPack.assets)
                 {
-                    _assetPacks[i].AddSection(asset.section);
+                    assetPack.AddSection(asset.section);
                 }
+                _assetPacks.Add(assetPack);
+                assetPacksDownloaded.Add(false);
             }
         }
 
 
+        private void AddAssetPack(AssetPack assetPack, bool downloaded)
+        {
+            assetPacksDownloaded.Add(downloaded);
+            _assetPacks.Add(assetPack);
+        }
+
         public void DownloadAssetPacks()
         {
-            for (int i = 0; i < _assetPacks.Length; i++)
+            for (int i = 0; i < _assetPacks.Count; i++)
             {
                 DownloadAssetPack(i);
             }
@@ -176,25 +195,26 @@ namespace AssetPacks
         }
 
 
-        public void SpawnAsset(int assetPackIndex, int sectionIndex, int assetIndex)
+        public GameObject SpawnAsset(int assetPackIndex, int sectionIndex, int assetIndex)
         {
             var prefab = (GameObject)_assetPacks[assetPackIndex].sections[sectionIndex].assets[assetIndex].asset;
-            SpawnAsset(prefab);
+            return SpawnAsset(prefab);
         }
 
 
-        public void SpawnAsset(Asset asset)
+        public GameObject SpawnAsset(Asset asset)
         {
             var prefab = (GameObject)asset.asset;
-            SpawnAsset(prefab);
+            return SpawnAsset(prefab);
         }
 
 
-        public void SpawnAsset(GameObject prefab)
+        public GameObject SpawnAsset(GameObject prefab)
         {
             var go = Instantiate(prefab);
             go.SetActive(true);
             go.tag = "Selectable";
+            return go;
         }
 
 
@@ -212,6 +232,7 @@ namespace AssetPacks
                 var data = go.AddComponent<Data>();
                 data.url = assetData.url;
                 go.transform.parent = null;
+                data.meshId = assetData.id;
 
                 AddColliders(go);
 
@@ -227,6 +248,7 @@ namespace AssetPacks
                 go.SetActive(false);
 
                 var asset = assetPack.AddAsset(assetData, go);
+                
                 if (temporal) _temporalAssets.Add(asset);
             }
             else
@@ -234,6 +256,52 @@ namespace AssetPacks
                 Debug.LogError("An error occurred while trying to download the gltf from " + assetData.url);
                 FeedbackLabel.instance.ShowError(_connectionToServerFailedMessage);
             }
+        }
+
+
+        public async void LoadSceneAndCreateAssetPack(SceneData sceneData, Callback callback = null)
+        {
+            var assetPack = new AssetPack();
+            assetPack.name = sceneData.name;
+
+            assetPack.AddSection("Floor");
+            var groundData = new AssetData
+            {
+                id = sceneData.ground.id,
+                name = sceneData.ground.name,
+                tags = sceneData.ground.tags,
+                url = sceneData.ground.url,
+                section = "Floor"
+            };
+
+            await DownloadTexture(assetPack, groundData);
+
+            foreach (var sharedObject in sceneData.sharedObjects)
+            {
+                var assetData = new AssetData
+                {
+                    id = sharedObject.id,
+                    name = sharedObject.name,
+                    tags = sharedObject.tags, 
+                    url = sharedObject.url,
+                    section = "Objects"
+                };
+
+                await DownloadGLTF(assetPack, assetData);
+
+                var asset = assetPack.GetAsset(assetData.id);
+
+                foreach (var objectData in sharedObject.objectsData)
+                {
+                    var transform = SpawnAsset(asset).transform;
+                    transform.parent = SceneManagement.instance.GetChunk(objectData.chunkX, objectData.chunkY);
+                    transform.localPosition = new Vector3(objectData.positionX, objectData.positionY, objectData.positionZ);
+                    transform.eulerAngles = new Vector3(objectData.rotationX, objectData.rotationY, objectData.rotationZ);
+                    transform.localScale = new Vector3(objectData.scaleX, objectData.scaleY, objectData.scaleZ);
+                }
+            }
+            AddAssetPack(assetPack, true);
+            callback?.Invoke();
         }
 
 
@@ -278,7 +346,6 @@ namespace AssetPacks
             else
             {
                 Texture2D texture = ((DownloadHandlerTexture)www.downloadHandler).texture;
-                print(texture);
                 var asset = assetPack.AddAsset(assetData, texture);
                 if (temporal) _temporalAssets.Add(asset);
             }
@@ -293,20 +360,20 @@ namespace AssetPacks
 
         public void PrintAssetPacks()
         {
+            print("=========== PRINT ASSET PACKS ===========");
+
             foreach (var assetPack in _assetPacks)
             {
-                print("Asset Pack: " + assetPack.name);
+                print("ASSET PACK: " + assetPack.name.ToUpper());
                 foreach (var section in assetPack.sections)
                 {
-                    print("Section: " + section.name);
+                    print("    * Section: " + section.name + " *");
                     foreach (var asset in section.assets)
                     {
-                        print(asset.name);
-                        print(asset.id);
-                        print("---");
+                        print($"        - id: {asset.id}, name: {asset.name}");
                     }
                 }
-                print("=========================");
+                print("-------------------------");
             }
         }
 
@@ -327,6 +394,38 @@ namespace AssetPacks
             return null;
         }
 
-        
+        public Asset GetAsset(object asset)
+        {
+            foreach (var assetPack in _assetPacks)
+            {
+                for (int i = 0; i < assetPack.sections.Count; i++)
+                {
+                    for (int j = 0; j < assetPack.sections[i].assets.Count; j++)
+                    {
+                        if (asset == assetPack.sections[i].assets[j].asset)
+                            return assetPack.sections[i].assets[j];
+                    }
+                }
+            }
+            return null;
+        }
+
+        public Asset GetAsset(int id)
+        {
+            foreach (var assetPack in _assetPacks)
+            {
+                for (int i = 0; i < assetPack.sections.Count; i++)
+                {
+                    for (int j = 0; j < assetPack.sections[i].assets.Count; j++)
+                    {
+                        if (id == assetPack.sections[i].assets[j].id)
+                            return assetPack.sections[i].assets[j];
+                    }
+                }
+            }
+            return null;
+        }
+
+
     }
 }

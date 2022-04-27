@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using AssetPacks;
+using UnityEngine.UI;
 
 public class AssetPackMenu : Menu
 {
@@ -11,9 +12,10 @@ public class AssetPackMenu : Menu
     //public ButtonListener buttonListener;
     public SectionMenu sectionMenu;
     public BuilderUI builderUI;
-
+    public Sprite defaultAssetPackImage;
     private void Start()
     {
+        SceneManagement.instance.loadedSceneCallback = LoadedSceneCallback;
         CreateButtons();
         AssetPackManager.instance.DownloadAssetPacksImages(SetImages);
     }
@@ -22,12 +24,13 @@ public class AssetPackMenu : Menu
     {
         var assetPacks = AssetPackManager.instance.assetPacks;
 
-        for(int i = 0; i < assetPacks.Length; i++)
+        for(int i = 0; i < assetPacks.Count; i++)
         {
             var btn = Instantiate(assetPackButton);
             btn.transform.SetParent(transform);
             btn.transform.localScale = Vector3.one;
             btn.text.text = assetPacks[i].name;
+            btn.image.sprite = defaultAssetPackImage;
             int assetPackIndex = i;
             btn.button.onClick.AddListener(delegate { ButtonListener(assetPackIndex); } );
             _buttons.Add(btn);
@@ -38,20 +41,32 @@ public class AssetPackMenu : Menu
     {
         sectionMenu.selectedAssetPack = assetPackIndex;
         builderUI.ShowSectionMenu(assetPackIndex);
-        //sectionMenu.CreateMenu(assetPackIndex);
     }
-    //public void Listener(int assetPackIndex)
-    //{
-    //    print("Listener " + assetPackIndex);
-    //    buttonListener(assetPackIndex);
-    //}
+
+    private void LoadedSceneCallback()
+    {
+        DeleteButtons();
+        CreateButtons();
+        SetImages();
+    }
 
     private void SetImages()
     {
         for (int i = 0; i < _buttons.Count; i++)
         {
-            _buttons[i].image.sprite = AssetPackManager.instance.assetPacks[i].image;
+            var image = AssetPackManager.instance.assetPacks[i].image;
+            if(image != null)
+            _buttons[i].image.sprite = image;
         }
+    }
+
+    private void DeleteButtons()
+    {
+        for (int i = 0; i < _buttons.Count; i++)
+        {
+            DestroyImmediate(_buttons[i].gameObject);
+        }
+        _buttons.Clear();
     }
 
 }
