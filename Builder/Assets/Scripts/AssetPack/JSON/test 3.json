@@ -1,0 +1,35 @@
+{
+    "name": "Untitled",
+    "chunksX": 1,
+    "chunksY": 1,
+    "ground": {
+        "id": -1,
+        "url": "",
+        "name": "",
+        "tags": [],
+        "objectsData": []
+    },
+    "sharedObjects": [
+        {
+            "id": 0,
+            "url": "http://localhost:8888/gltf/tree.glb",
+            "name": "Pine",
+            "tags": [ "tree", "nature" ],
+            "objectsData": [
+                {
+                    "positionX": 0.0,
+                    "positionY": 0.0,
+                    "positionZ": 0.0,
+                    "rotationX": 0.0,
+                    "rotationY": 0.0,
+                    "rotationZ": 0.0,
+                    "scaleX": 0.0625,
+                    "scaleY": 10.0,
+                    "scaleZ": 0.0625,
+                    "chunkX": 0,
+                    "chunkY": 0
+                }
+            ]
+        }
+    ]
+}

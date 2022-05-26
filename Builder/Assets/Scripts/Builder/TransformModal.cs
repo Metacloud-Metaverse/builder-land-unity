@@ -3,9 +3,11 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 
-public class TransformModal : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class TransformModal : MonoBehaviour//, IPointerEnterHandler, IPointerExitHandler
 {
     private Transform _target;
+    [SerializeField] private TransformModalPointerHandler[] _pointerHandlers;
+
     public Transform target { get { return _target; } }
 
     public InputField posX;
@@ -18,8 +20,20 @@ public class TransformModal : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     public InputField sclY;
     public InputField sclZ;
 
-    private bool _isMouseInside;
-    public bool isMouseInside { get { return _isMouseInside; } }
+    //private bool _isMouseInside;
+    public bool isMouseInside
+    {
+        get
+        {
+            foreach (var ph in _pointerHandlers)
+            {
+                if (ph.isMouseInside) return true;
+            }
+
+            return false;
+        }
+    }
+
 
     private static TransformModal _instance;
     public static TransformModal instance { get { return _instance; } }
@@ -64,15 +78,18 @@ public class TransformModal : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         });
     }
 
-    public void OnPointerEnter(PointerEventData pointerEventData)
-    {
-        _isMouseInside = true;
-    }
+    //public void OnPointerEnter(PointerEventData pointerEventData)
+    //{
+    //    _isMouseInside = true;
+    //    print($"Mouse inside: {_isMouseInside}");
+    //}
 
-    public void OnPointerExit(PointerEventData pointerEventData)
-    {
-        _isMouseInside = false;
-    }
+    //public void OnPointerExit(PointerEventData pointerEventData)
+    //{
+    //    _isMouseInside = false;
+    //    print($"Mouse inside: {_isMouseInside}");
+    //}
+
     public void SetPositionX()
     {
         SetVector(posX, Axis.Type.X, PivotController.Mode.move);

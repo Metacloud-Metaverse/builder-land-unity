@@ -18,7 +18,7 @@ public class SceneManagement : MonoBehaviour
     private AssetPackManager _apm;
     public string sceneName = "Untitled";
     private List<List<MeshRenderer>> _chunksRenderers = new List<List<MeshRenderer>>();
-    private int _currentGroundId;
+    private int _currentGroundId = -1;
     public float maxHeightCoef = 20;
     public float maxHeight { get; private set; }
     public int maxTriangles = 10000;
@@ -27,14 +27,28 @@ public class SceneManagement : MonoBehaviour
     public int maxMaterials
     {
         get { return _maxMaterials; }
-        set { _maxMaterials = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value); }
+        set
+        {
+            if (chunks.x + chunks.y > 2)
+                _maxMaterials = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value);
+            else
+                _maxMaterials = value;
+        }
     }
+
     public int maxMaterialsCoef = 20;
     private int _maxTextures;
     public int maxTextures
     {
         get { return _maxTextures; }
-        set { _maxTextures = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value); }
+        set
+        {
+            if (chunks.x + chunks.y > 2)
+                _maxTextures = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value);
+            else
+                _maxTextures = value;
+
+        }
 
     }
     public int maxTexturesCoef = 10;
@@ -160,6 +174,8 @@ public class SceneManagement : MonoBehaviour
                 else
                     UnselectObject();
             }
+            else if (TransformModal.instance != null && TransformModal.instance.isMouseInside) return;
+
             else
             {
                 UnselectObject();
@@ -233,14 +249,22 @@ public class SceneManagement : MonoBehaviour
         data.chunksX = chunks.x;
         data.chunksY = chunks.y;
 
-        var textureAsset = AssetPackManager.instance.GetAsset(_currentGroundId);
-        if(textureAsset != null)
+        data.ground = new SharedObjectData();
+
+        if (_currentGroundId != -1)
         {
-            data.ground = new SharedObjectData();
-            data.ground.url = textureAsset.url;
-            data.ground.id = textureAsset.id;
-            data.ground.name = textureAsset.name;
-            data.ground.tags = textureAsset.tags;
+            var textureAsset = AssetPackManager.instance.GetAsset(_currentGroundId);
+            if (textureAsset != null)
+            {
+                data.ground.url = textureAsset.url;
+                data.ground.id = textureAsset.id;
+                data.ground.name = textureAsset.name;
+                data.ground.tags = textureAsset.tags;
+            }
+        }
+        else
+        {
+            data.ground.id = _currentGroundId;
         }
 
         var dataComponents = new List<Data>();
@@ -326,7 +350,7 @@ public class SceneManagement : MonoBehaviour
 
     private void LoadedSceneCallback()
     {
-        SetFloorTexture(_sceneData.ground.id);
+        if(_sceneData.ground.id != -1) SetFloorTexture(_sceneData.ground.id);
         loadedSceneCallback();
     }
 
@@ -359,6 +383,10 @@ public class SceneManagement : MonoBehaviour
         return correctGameObjects;
     }
 
+    public Vector3 GetMiddlePosition()
+    {
+        return new Vector3((chunks.x - 1) * chunkSize.x / 2, 0, (chunks.y - 1) * chunkSize.z / 2);
+    }
 
     private void CreateWalls()
     {

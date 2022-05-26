@@ -214,6 +214,7 @@ namespace AssetPacks
             var go = Instantiate(prefab);
             go.SetActive(true);
             go.tag = "Selectable";
+            go.transform.position = SceneManagement.instance.GetMiddlePosition();
             return go;
         }
 
@@ -274,7 +275,8 @@ namespace AssetPacks
                 section = "Floor"
             };
 
-            await DownloadTexture(assetPack, groundData);
+            if(groundData.id != -1)
+                await DownloadTexture(assetPack, groundData);
 
             foreach (var sharedObject in sceneData.sharedObjects)
             {
@@ -313,22 +315,24 @@ namespace AssetPacks
             {
                 for (int i = 0; i < filters.Length; i++)
                 {
-                    var collider = go.AddComponent<MeshCollider>();
+                    var collider = filters[i].gameObject.AddComponent<MeshCollider>();
                     collider.sharedMesh = filters[i].mesh;
                 }
             }
             else
             { 
                 var renderers = go.transform.GetChild(0).gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
-                var colliders = new BoxCollider[renderers.Length];
+                var colliders = new Collider[renderers.Length];
                 for (int i = 0; i < colliders.Length; i++)
                 {
-                    var collider = go.AddComponent<BoxCollider>();
+                    //var collider = go.AddComponent<BoxCollider>();
+                    var collider = go.AddComponent<MeshCollider>();
+                    collider.sharedMesh = renderers[i].sharedMesh;
                     colliders[i] = collider;
                 }
-                var resizeable = go.AddComponent<ResizeableBoxCollider>();
-                resizeable.colliders = colliders;
-                resizeable.renderers = renderers;
+                //var resizeable = go.AddComponent<ResizeableBoxCollider>();
+                //resizeable.colliders = colliders;
+                //resizeable.renderers = renderers;
             }
         }
 
