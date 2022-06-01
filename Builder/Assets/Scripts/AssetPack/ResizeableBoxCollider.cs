@@ -6,21 +6,6 @@ public class ResizeableBoxCollider: MonoBehaviour
 {
     public BoxCollider[] colliders;
     public SkinnedMeshRenderer[] renderers;
-    public float boundsCoef = 1;
-
-    private void Start()
-    {
-        //for (var i = 0; i < colliders.Length; i++)
-        //{
-        //    colliders[i].center = renderers[i].bounds.center;
-        //}
-        //Invoke("Resize", 3f);
-    }
-
-    private void Resize()
-    {
-        
-    }
 
     public void Update()
     {
@@ -28,8 +13,20 @@ public class ResizeableBoxCollider: MonoBehaviour
 
         for (int i = 0; i < colliders.Length; i++)
         {
-            colliders[i].center = renderers[i].bounds.center;
-            colliders[i].size = renderers[i].bounds.size;
+            var bounds = renderers[i].bounds;
+
+            // In world-space!
+            var size = bounds.size;
+            var center = bounds.center;
+
+            // converted to local space of the collider
+            size = colliders[i].transform.InverseTransformVector(size);
+            center = colliders[i].transform.InverseTransformPoint(center);
+
+            colliders[i].size = size;
+            colliders[i].center = center;
+
         }
     }
+
 }

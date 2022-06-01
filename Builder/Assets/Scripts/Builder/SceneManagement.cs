@@ -426,7 +426,7 @@ public class SceneManagement : MonoBehaviour
 
         CreateWall(
             "Wall B",
-            new Vector3(chunkSize.x / 2 * (chunks.x - 1), 0, chunkSize.z / 2 * (chunks.y - 1)),
+            new Vector3(chunkSize.x / 2 * (chunks.x - 1), -1, chunkSize.z / 2 * (chunks.y - 1)),
             new Vector3(chunkSize.x * chunks.x, 1, chunkSize.z * chunks.y),
             Vector3.zero,
             new Vector3(0, -0.5f, 0)

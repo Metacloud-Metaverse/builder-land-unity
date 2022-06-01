@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 8324c4861c8db43a6aea0d20697ad2fd
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Aristotelica Icons
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: f06e24bc2fc69433aac67bca5e108c34, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
