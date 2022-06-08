@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,16 +9,9 @@ public class FeedbackLabel : MonoBehaviour
     public Text message;
     public Color successColor;
     public Color errorColor;
-
-    private static FeedbackLabel _instance;
-    public static FeedbackLabel instance { get { return _instance; } }
-
+    
     private void Awake()
     {
-        if (_instance == null) _instance = this;
-        else
-            Debug.LogError("There are more than one Feedback Label instances");
-
         panel.gameObject.SetActive(false);
     }
 
@@ -36,11 +31,12 @@ public class FeedbackLabel : MonoBehaviour
     {
         this.message.text = message;
         panel.gameObject.SetActive(true);
-        Invoke("HideLabel", seconds);
+        StartCoroutine(HideLabel(seconds));
     }
 
-    public void HideLabel()
+    private IEnumerator HideLabel(float timeToWait)
     {
+        yield return new WaitForSeconds(timeToWait);
         panel.gameObject.SetActive(false);
     }
     

@@ -2,16 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using AssetPacks;
+using UnityEngine.UI;
 
 public class SearchAssetMenu : Menu
 {
     public Thumbnail thumbnailPrefab;
     public RectTransform buttonsParent;
+    public InputField searchInput;
+    public GameObject searchingLabel;
+    public Text searchLabel;
+    public Text notFoundLabel;
     private List<Thumbnail> _thumbnails = new();
-
 
     public void Search(string parameter)
     {
+        searchInput.interactable = false;
         DestroyThumbnails();
 
         parameter = parameter.ToUpper();
@@ -52,11 +57,26 @@ public class SearchAssetMenu : Menu
         }
     }
 
-
+    private Color _selectionColor = new Color();
+    private Color _transparent = new Color(0, 0, 0, 0);
     private void DownloadCallback()
     {
         CreateButtons();
+        searchingLabel.SetActive(false);
+        searchInput.interactable = true;
+        searchInput.ActivateInputField();
+        StartCoroutine(MoveTextEndNextFrame());
+        _selectionColor = searchInput.selectionColor;
+        searchInput.selectionColor = _transparent;
     }
+
+    IEnumerator MoveTextEndNextFrame()
+    {
+        yield return 0; 
+        searchInput.MoveTextEnd(false);
+        searchInput.selectionColor = _selectionColor;
+    }
+
 
     private void DestroyThumbnails()
     {
@@ -70,7 +90,7 @@ public class SearchAssetMenu : Menu
     protected override void CreateButtons()
     {
         var assets = AssetPackManager.instance.temporalAssets;
-
+        if (assets.Count == 0) notFoundLabel.gameObject.SetActive(true);
         for (int j = 0; j < assets.Count; j++)
         {
             var thumbnail = Instantiate(thumbnailPrefab);
@@ -97,5 +117,16 @@ public class SearchAssetMenu : Menu
             }
             _thumbnails.Add(thumbnail);
         }
+    }
+
+    public void CleanButtons()
+    {
+        if (_thumbnails.Count == 0) return;
+
+        foreach (var button in _thumbnails)
+        {
+            DestroyImmediate(button.gameObject);
+        }
+        _thumbnails.Clear();
     }
 }

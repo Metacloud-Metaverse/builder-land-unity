@@ -1,11 +1,13 @@
 using UnityEngine;
 using AssetPacks;
 using System.Collections.Generic;
-using UnityEngine.Networking;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 public class SceneManagement : MonoBehaviour
 {
+    [DllImport("__Internal")]
+    private static extern int GetSceneId();
+
     private Outline _selectedObjectOutline;
     public PivotController pivot;
     public TransformModal transformModal;
@@ -13,6 +15,11 @@ public class SceneManagement : MonoBehaviour
     public MeshRenderer floorPrefab;
     public Vector3 chunkSize;
     public Camera editorCamera;
+    public Camera menuCamera;
+    public Canvas menuCanvas;
+    public Canvas previewCanvas;
+    public GameObject fpc;
+    public Navbar navbar;
     private static SceneManagement _instance;
     public static SceneManagement instance { get { return _instance; } }
     private AssetPackManager _apm;
@@ -24,6 +31,8 @@ public class SceneManagement : MonoBehaviour
     public int maxTriangles = 10000;
     public int maxMeshes = 300;
     private int _maxMaterials;
+    private bool _previewMode;
+
     public int maxMaterials
     {
         get { return _maxMaterials; }
@@ -70,7 +79,7 @@ public class SceneManagement : MonoBehaviour
     {
         if (_instance == null) _instance = this;
         else
-            Debug.LogError("There are more than one scene managemente in the scene");
+            Debug.LogError("There are more than one scene management in the scene");
 
         SetMaxHeight();
         maxMaterials = maxMaterialsCoef;
@@ -80,10 +89,42 @@ public class SceneManagement : MonoBehaviour
 
     private void Start()
     {
+        if (Application.platform == RuntimePlatform.WebGLPlayer)
+        {
+            var id = GetSceneId();
+            if(id == -1)
+                StartNoIndex();
+            else
+                StartTrue();
+        }
+        else
+        {
+            StartEditor();
+        }
+    }
+    
+    private void StartNoIndex()
+    {
+        FeedbackLabelManager.Instance.ShowError("No scene index passed. Started for testing only. Not all function will be available.");
+        InitializeBuilder();
+    }
+
+    private void StartEditor()
+    {
+        FeedbackLabelManager.Instance.ShowSuccess("Started in editor mode.");
+        InitializeBuilder();
+    }
+
+    private void StartTrue()
+    {
+        //TODO: API connection
+    }
+
+    private void InitializeBuilder()
+    {
         CreateChunks();
         SetCameraPosition();
         CreateWalls();
-        //Invoke("Load", 6f);
     }
 
     private void CreateChunks()
@@ -148,6 +189,7 @@ public class SceneManagement : MonoBehaviour
 
     private void Update()
     {
+        if (_previewMode) return;
         if (Input.GetMouseButtonDown(0))
         {
             RaycastHit hit;
@@ -157,30 +199,36 @@ public class SceneManagement : MonoBehaviour
             if (Physics.Raycast(ray, out hit, 1000, layerMask))
             {
                 print(hit.transform.gameObject.name);
+                if (Navbar.Instance.isMouseInside) return;
 
                 if (hit.transform.tag == "Selectable")
                 {
                     if (TransformModal.instance != null && TransformModal.instance.isMouseInside) return;
 
-                    if (_selectedObjectOutline != null) _selectedObjectOutline.enabled = false;
-                    _selectedObjectOutline = hit.transform.GetComponent<Outline>();
-                    _selectedObjectOutline.enabled = true;
+                    SelectObject(hit.transform.gameObject);
+                    //if (_selectedObjectOutline != null) _selectedObjectOutline.enabled = false;
+                    //_selectedObjectOutline = hit.transform.GetComponent<Outline>();
+                    //_selectedObjectOutline.enabled = true;
+                    //transformModal.gameObject.SetActive(true);
+                    //transformModal.SetTarget(_selectedObjectOutline.transform);
+
                     //pivot.gameObject.SetActive(true);
                     //pivot.transform.position = _selectedObjectOutline.transform.position;
                     //pivot.transformableObject = _selectedObjectOutline.gameObject;
-                    transformModal.gameObject.SetActive(true);
-                    transformModal.SetTarget(_selectedObjectOutline.transform);
+
                 }
                 else
                     UnselectObject();
             }
             else if (TransformModal.instance != null && TransformModal.instance.isMouseInside) return;
+            else if (Navbar.Instance.isMouseInside) return;
 
             else
             {
                 UnselectObject();
             }
         }
+
     }
 
 
@@ -193,15 +241,21 @@ public class SceneManagement : MonoBehaviour
             if (_selectedObjectOutline != null)
                 _selectedObjectOutline.enabled = false;
             transformModal.gameObject.SetActive(false);
+            _selectedObjectOutline = null;
         }
     }
 
+    private void NulleateSelectedObject()
+    {
+        _selectedObjectOutline = null;
+    }
 
     public void DeleteObject()
     {
         if (_selectedObjectOutline.gameObject == null) return;
 
         Destroy(_selectedObjectOutline.gameObject);
+        SoundManager.Instance.PlaySound(SoundID.TRASH);
     }
 
 
@@ -215,6 +269,7 @@ public class SceneManagement : MonoBehaviour
                 renderer.material.color = Color.white;
             }
         }
+        SoundManager.Instance.PlaySound(SoundID.PAINT);
     }
 
     public void SetFloorTexture(int assetId)
@@ -237,7 +292,7 @@ public class SceneManagement : MonoBehaviour
     {
         if (!ValidateCounts())
         {
-            FeedbackLabel.instance.ShowError("There are too many elements in the scene.");
+            FeedbackLabelManager.Instance.ShowError("There are too many elements in the scene.");
             return;
         }
 
@@ -559,5 +614,59 @@ public class SceneManagement : MonoBehaviour
             return true;
 
         return false;
+    }
+
+    public void EnterPreviewMode()
+    {
+        Navbar.Instance.ResetPointerHandlers();
+        UnselectObject();
+        editorCamera.enabled = false;
+        menuCamera.enabled = false;
+        fpc.SetActive(true);
+        menuCanvas.gameObject.SetActive(false);
+        previewCanvas.gameObject.SetActive(true);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        _previewMode = true;
+    }
+
+    public void ExitPreviewMode()
+    {
+        editorCamera.enabled = true;
+        menuCamera.enabled = true;
+        fpc.SetActive(false);
+        menuCanvas.gameObject.SetActive(true);
+        previewCanvas.gameObject.SetActive(false);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        _previewMode = false;
+    }
+
+    public void DuplicateObject()
+    {
+        if (_selectedObjectOutline == null) return;
+        var cloneParent = _selectedObjectOutline.gameObject;
+        UnselectObject();
+        var clone = Instantiate(cloneParent);
+        clone.transform.position = cloneParent.transform.position;
+        SoundManager.Instance.PlaySound(SoundID.PASTE);
+        SelectObject(clone);        
+    }
+
+
+    private void SelectObject(GameObject selection)
+    {
+         UnselectObject();
+        
+        _selectedObjectOutline = selection.GetComponent<Outline>();
+        _selectedObjectOutline.enabled = true;
+        transformModal.SetTarget(selection.transform);
+        transformModal.gameObject.SetActive(true);       
+    }
+
+    public void SpawnAsset(int selectedAssetPack, int sectionIndex, int assetIndex)
+    {
+        var asset = AssetPackManager.instance.SpawnAsset(selectedAssetPack, sectionIndex, assetIndex);
+        SelectObject(asset);
     }
 }

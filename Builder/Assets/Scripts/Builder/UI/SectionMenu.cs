@@ -52,7 +52,7 @@ public class SectionMenu : Menu
             var sectionObject = Instantiate(sectionPrefab);
             sectionObject.transform.SetParent(sectionsContainer);
             sectionObject.transform.localScale = Vector3.one;
-            sectionObject.title.text = sections[i].name;
+            sectionObject.title.text = sections[i].name.ToUpper();
 
             var assets = sections[i].assets;
 
@@ -69,7 +69,7 @@ public class SectionMenu : Menu
                     var go = (GameObject)assets[j].asset;
                     thumbnail.SetTexture(go.transform);
                     thumbnail.button.onClick.AddListener(
-                        delegate { AssetPackManager.instance.SpawnAsset(selectedAssetPack, sectionIndex, assetIndex); });
+                        delegate { SceneManagement.instance.SpawnAsset(selectedAssetPack, sectionIndex, assetIndex); });
 
                 }
                 else if (assets[j].asset.GetType() == typeof(Texture2D))
@@ -108,6 +108,7 @@ public class SectionMenu : Menu
         fixSection.transform.SetParent(sectionsContainer);
         fixSection.transform.localScale = Vector3.one;
         fixSection.gameObject.SetActive(false);
+        _sectionObjects.Add(fixSection);
     }
 
 
@@ -132,5 +133,6 @@ public class SectionMenu : Menu
     {
         image.sprite = AssetPackManager.instance.assetPacks[selectedAssetPack].image;
         CreateMenu(selectedAssetPack);
+        contentSizeFitter.enabled = true;
     }
 }

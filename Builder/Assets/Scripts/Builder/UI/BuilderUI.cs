@@ -12,7 +12,7 @@ public class BuilderUI : MonoBehaviour
     public AssetPackMenu assetPackMenu;
     public SectionMenu sectionMenu;
     public SearchAssetMenu searchAssetMenu;
-
+    
     public SceneCounts sceneCountsPopup;
 
     private Menu[] _menus;
@@ -78,17 +78,49 @@ public class BuilderUI : MonoBehaviour
             sceneCountsPopup.RefreshCounts();
     }
 
-
+    private int _savedParameterLength;
+    public float timeUntilSearch = 1;
     public void Search(string parameter)
     {
-        if(parameter != "")
+        _savedParameterLength = parameter.Length;
+        searchAssetMenu.CleanButtons();
+        searchAssetMenu.notFoundLabel.gameObject.SetActive(false);
+        searchAssetMenu.searchLabel.gameObject.SetActive(true);
+        searchAssetMenu.searchLabel.text = $"Search \"{parameter}\"";
+        ShowSearchAssetMenu();
+
+        if (PassSearchValidations(parameter))
         {
-            ShowSearchAssetMenu();
-            searchAssetMenu.Search(parameter);
+            StartCoroutine(MakeSearch(parameter));
         }
-        else
+        else if(parameter.Length == 0)
         {
             ShowAssetPackMenu();
         }
-    } 
+    }
+
+    private bool PassSearchValidations(string parameter)
+    {
+        if (parameter == "")
+            return false;
+        if (parameter.Length < 3)
+            return false;
+
+
+        return true;
+    }
+
+    private IEnumerator MakeSearch(string parameter)
+    {
+        yield return new WaitForSeconds(timeUntilSearch);
+        if(parameter.Length == _savedParameterLength)
+        {
+            searchAssetMenu.searchLabel.gameObject.SetActive(false);
+            searchAssetMenu.searchingLabel.SetActive(true);
+
+            searchAssetMenu.Search(parameter);
+        }
+
+    }
+
 }

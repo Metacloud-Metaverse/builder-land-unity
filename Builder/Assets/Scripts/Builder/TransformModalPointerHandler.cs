@@ -14,4 +14,9 @@ public class TransformModalPointerHandler : MonoBehaviour, IPointerEnterHandler,
     {
         isMouseInside = false;
     }
+
+    public void Reset()
+    {
+        isMouseInside = false;
+    }
 }

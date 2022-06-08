@@ -66,7 +66,7 @@ namespace AssetPacks
             if (www.result != UnityWebRequest.Result.Success)
             {
                 Debug.Log(www.error);
-                FeedbackLabel.instance.ShowError(_connectionToServerFailedMessage);
+                FeedbackLabelManager.Instance.ShowError(_connectionToServerFailedMessage);
             }
             else
             {
@@ -198,6 +198,7 @@ namespace AssetPacks
         public GameObject SpawnAsset(int assetPackIndex, int sectionIndex, int assetIndex)
         {
             var prefab = (GameObject)_assetPacks[assetPackIndex].sections[sectionIndex].assets[assetIndex].asset;
+            SoundManager.Instance.PlaySound(SoundID.POP);
             return SpawnAsset(prefab);
         }
 
@@ -255,7 +256,7 @@ namespace AssetPacks
             else
             {
                 Debug.LogError("An error occurred while trying to download the gltf from " + assetData.url);
-                FeedbackLabel.instance.ShowError(_connectionToServerFailedMessage);
+                FeedbackLabelManager.Instance.ShowError(_connectionToServerFailedMessage);
             }
         }
 
@@ -345,7 +346,7 @@ namespace AssetPacks
             if (www.result != UnityWebRequest.Result.Success)
             {
                 Debug.Log(www.error);
-                FeedbackLabel.instance.ShowError(_connectionToServerFailedMessage);
+                FeedbackLabelManager.Instance.ShowError(_connectionToServerFailedMessage);
             }
             else
             {
