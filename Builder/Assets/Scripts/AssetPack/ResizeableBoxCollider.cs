@@ -5,7 +5,7 @@ using UnityEngine;
 public class ResizeableBoxCollider: MonoBehaviour
 {
     public BoxCollider[] colliders;
-    public SkinnedMeshRenderer[] renderers;
+    public Renderer[] renderers;
 
     public void Update()
     {

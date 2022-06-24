@@ -9,7 +9,8 @@ namespace APISystem
     {
         public string url;
         protected MonoBehaviour _invoker;
-
+        public string token;
+        
         public API(MonoBehaviour invoker)
         {
             _invoker = invoker;

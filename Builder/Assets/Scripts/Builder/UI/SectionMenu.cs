@@ -69,7 +69,7 @@ public class SectionMenu : Menu
                     var go = (GameObject)assets[j].asset;
                     thumbnail.SetTexture(go.transform);
                     thumbnail.button.onClick.AddListener(
-                        delegate { SceneManagement.instance.SpawnAsset(selectedAssetPack, sectionIndex, assetIndex); });
+                        delegate { SceneManagement.Instance.SpawnAsset(selectedAssetPack, sectionIndex, assetIndex); });
 
                 }
                 else if (assets[j].asset.GetType() == typeof(Texture2D))
@@ -79,7 +79,7 @@ public class SectionMenu : Menu
                     int id = assets[j].id;
 
                     thumbnail.button.onClick.AddListener(
-                        delegate { SceneManagement.instance.SetFloorTexture(id); });
+                        delegate { SceneManagement.Instance.SetFloorTexture(id); });
 
                 }
                 sectionObject.thumbnails.Add(thumbnail);

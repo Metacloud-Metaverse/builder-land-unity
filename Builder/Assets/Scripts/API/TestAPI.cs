@@ -31,8 +31,6 @@ public class TestAPI : MonoBehaviour
         {
             print(p);
         }
-
-
     }
 
     IEnumerator Login()
@@ -43,7 +41,6 @@ public class TestAPI : MonoBehaviour
 
         var url = "https://user.api.meta-cloud.io/user/login-guest";
         var data = "{\"user_id\": 4, \"guest_private_secret\": \"AC_1804c7e43a5\"}";
-        
         
         var request = new UnityWebRequest(url, "POST");
         byte[] bodyRaw = Encoding.UTF8.GetBytes(data);
@@ -93,5 +90,4 @@ public class TestAPI : MonoBehaviour
             Debug.LogError(request.error);
         Debug.Log(System.Text.Encoding.UTF8.GetString(request.downloadHandler.data));
     }
-
 }

@@ -14,7 +14,8 @@ public class FirstPersonController : MonoBehaviour
     private float _xRot;
     private const float _RECT_ANGLE = 90;
     public float timeCursorShown = 5;
-
+    public bool freeCamera = true;
+    
     private void Awake()
     {
         _cam = GetComponentInChildren<Camera>();
@@ -26,10 +27,9 @@ public class FirstPersonController : MonoBehaviour
         Move();
         if(Input.GetKeyDown(KeyCode.Escape))
         {
-            SceneManagement.instance.ExitPreviewMode();
+            SceneManagement.Instance.ExitPreviewMode();
         }
     }
-
 
     private void GetAxis()
     {
@@ -49,7 +49,6 @@ public class FirstPersonController : MonoBehaviour
     {
         transform.position += transform.forward * _vertical * speed * Time.deltaTime;
         transform.position += transform.right * _horizontal * speed * Time.deltaTime;
-
     }
 
     private void Rotate()
@@ -57,7 +56,14 @@ public class FirstPersonController : MonoBehaviour
         transform.Rotate(Vector3.up, _mouseHorizontal * rotationCoef * Time.deltaTime);
         _xRot -= _mouseVertical;
         _xRot = Mathf.Clamp(_xRot, -_RECT_ANGLE, _RECT_ANGLE);
-        _cam.transform.localRotation = Quaternion.Euler(_xRot, 0, 0);
-        
+        if (freeCamera)
+        {
+            var rot = transform.rotation.eulerAngles;
+            transform.localRotation = Quaternion.Euler(_xRot, rot.y, 0);
+        }
+        else
+        {
+            _cam.transform.localRotation = Quaternion.Euler(_xRot, 0, 0);
+        }
     }
 }

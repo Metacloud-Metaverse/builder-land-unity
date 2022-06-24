@@ -1,0 +1,75 @@
+{
+    "assetPacks":
+    [
+        {
+            "name": "Party",
+            "image": "/assets/textures/park.png",
+            "assets": [
+                {
+                    "id": 0,
+                    "name": "Speaker",
+                    "tags": [ "music", "party" ],
+                    "url": "/assets/gltf/speaker.glb",
+                    "section": "Props"
+                },
+                {
+                    "id": 10,
+                    "name": "Ball",
+                    "tags": [ "party", "play" ],
+                    "url": "/assets/gltf/ball.glb",
+                    "section": "Props"
+                },
+                {
+                    "id": 11,
+                    "name": "Parasol",
+                    "tags": [ "sun", "beach" ],
+                    "url": "/assets/gltf/parasol.glb",
+                    "section": "Props"
+                },
+                {
+                    "id": 12,
+                    "name": "Palm",
+                    "tags": [ "tree", "nature" ],
+                    "url": "/assets/gltf/palm.glb",
+                    "section": "Nature"
+                },
+                {
+                    "id": 13,
+                    "name": "Plant",
+                    "tags": [ "nature" ],
+                    "url": "/assets/gltf/plant.glb",
+                    "section": "Nature"
+                },
+                {
+                    "id": 1,
+                    "name": "Grass",
+                    "tags": [ "ground", "nature", "floor" ],
+                    "url": "/assets/textures/grass2.jpeg",
+                    "section": "Ground"
+                }
+            ]
+        },
+        {
+            "name": "Test",
+            "image": "/assets/textures/image.png",
+            "assets": [
+                {
+                    "id": 2,
+                    "name": "Gnark",
+                    "tags": [ "character", "pirate", "zombie" ],
+                    "url": "/assets/gltf/gnark.gltf",
+                    "section": "Characters"
+                },
+                {
+                    "id": 3,
+                    "name": "Tile",
+                    "tags": [ "ground", "nature", "floor" ],
+                    "url": "/assets/textures/tiles.jpeg",
+                    "section": "Ground"
+                }
+            ]
+        }
+    ]
+}
+
+

@@ -1,13 +1,11 @@
+using System;
 using UnityEngine;
 using AssetPacks;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using APISystem;
 
 public class SceneManagement : MonoBehaviour
 {
-    [DllImport("__Internal")]
-    private static extern int GetSceneId();
-
     private Outline _selectedObjectOutline;
     public PivotController pivot;
     public TransformModal transformModal;
@@ -20,28 +18,47 @@ public class SceneManagement : MonoBehaviour
     public Canvas previewCanvas;
     public GameObject fpc;
     public Navbar navbar;
-    private static SceneManagement _instance;
-    public static SceneManagement instance { get { return _instance; } }
+    public GameObject floorRuler;
+    
+    public static SceneManagement Instance { get; private set; }
     private AssetPackManager _apm;
     public string sceneName = "Untitled";
     private List<List<MeshRenderer>> _chunksRenderers = new List<List<MeshRenderer>>();
     private int _currentGroundId = -1;
     public float maxHeightCoef = 20;
     public float maxHeight { get; private set; }
-    public int maxTriangles = 10000;
-    public int maxMeshes = 300;
+    public int maxTrianglesCoef = 10000;
+    public int maxMeshesCoef = 300;
+    private int _maxTriangles;
+    public bool activeEditor = true;
+    
+    public int maxTriangles
+    {
+        get => _maxTriangles;
+        private set => _maxTriangles = chunks.x * chunks.y * value;
+    }
+
+    private int _maxMeshes;
+
+    public int maxMeshes
+    {
+        get => _maxMeshes;
+        private set => _maxMeshes = chunks.x * chunks.y * value;
+    }
     private int _maxMaterials;
     private bool _previewMode;
-
+    private BuilderAPI _builderAPI;
+    
     public int maxMaterials
     {
         get { return _maxMaterials; }
         set
         {
-            if (chunks.x + chunks.y > 2)
-                _maxMaterials = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value);
-            else
-                _maxMaterials = value;
+            // if (chunks.x + chunks.y > 2)
+            //     _maxMaterials = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value);
+            // else
+            //     _maxMaterials = value;
+            _maxMaterials = (int)(Mathf.Log(chunks.x * chunks.y + 1, 2) * value);
         }
     }
 
@@ -52,59 +69,117 @@ public class SceneManagement : MonoBehaviour
         get { return _maxTextures; }
         set
         {
-            if (chunks.x + chunks.y > 2)
-                _maxTextures = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value);
-            else
-                _maxTextures = value;
-
+            // if (chunks.x + chunks.y > 2)
+            //     _maxTextures = (int)(Mathf.Log(chunks.x * chunks.y, 2) * value);
+            // else
+            //     _maxTextures = value;
+            _maxTextures = (int)(Mathf.Log(chunks.x * chunks.y + 1, 2) * value);
         }
-
     }
     public int maxTexturesCoef = 10;
     public float cameraCoef = 5;
-    public Vector3 initialCameraPos
-    {
-        get { return new Vector3(chunkSize.x / 2 * -1, 7.7f, chunkSize.z / 2 * -1); }
-    }
+    public Vector3 initialCameraPos => new Vector3(chunkSize.x / 2 * -1, 7.7f, chunkSize.z / 2 * -1);
 
     private int _trianglesCount;
     private int _meshesCount;
     private int _materialsCount;
     private int _texturesCount;
-
+    private UsersAPI _usersAPI;
     public TextAsset json; //Testing only
     public AssetPackManager.Callback loadedSceneCallback;
-
+    
     private void Awake()
     {
-        if (_instance == null) _instance = this;
+        if (Instance == null) Instance = this;
         else
             Debug.LogError("There are more than one scene management in the scene");
 
         SetMaxHeight();
         maxMaterials = maxMaterialsCoef;
         maxTextures = maxTexturesCoef;
+        maxMeshes = maxMeshesCoef;
+        maxTriangles = maxTrianglesCoef;
+        
+        _usersAPI = new UsersAPI(this);
+        _builderAPI = new BuilderAPI(this);
     }
 
-
+    private int _sceneId;
     private void Start()
     {
+        BuilderUI.Instance.loadingSceneLabel.SetActive(true);
         if (Application.platform == RuntimePlatform.WebGLPlayer)
         {
-            var id = GetSceneId();
-            if(id == -1)
-                StartNoIndex();
+            var credentials = GetUserAndPass();
+            if (credentials.user == -1 || string.IsNullOrEmpty(credentials.pass))
+            {
+                FeedbackLabelManager.Instance.ShowError("No credentials were passed. To test credentials, add them to the url as follows: \"?id=0&user=1&pass=secret\". This feature will only be available during development.");
+                InitializeBuilder();
+            }
             else
-                StartTrue();
+                LoginAndStart(credentials);
         }
         else
         {
             StartEditor();
         }
     }
+
+    private string _token;
+
+    private void LoginAndStart(Credentials credentials)
+    {
+        // var userApi = new UsersAPI(this);
+        // _usersAPI.LoginGuest(credentials.user, credentials.pass, LoginCallback);
+    }
+
+    public void Login(int user, string pass, APIConnection.ConnectionCallback callback = null)
+    {
+        var connectionCallback = callback ?? LoginCallback;
+        _usersAPI.LoginGuest(user, pass, connectionCallback);
+    }
+    
+    public void CreateGuest(APIConnection.ConnectionCallback callback)
+    {
+        _usersAPI.CreateGuest(callback);
+    }
+    
+    private void LoginCallback(string json)
+    {
+        Debug.Log("Login callback " + json);
+        var responseData = JsonUtility.FromJson<LoginGuestResponseData>(json);
+        if (responseData.statusCode == StatusCode.SUCCESS)
+        {
+            _token = responseData.data.access_token;
+            StartWithSceneData();
+        }
+        else
+        {
+            FeedbackLabelManager.Instance.ShowError(responseData.message);
+            FeedbackLabelManager.Instance.ShowError("Not all features will be available.");
+            InitializeBuilder();
+        }
+    }
+
+    public struct Credentials
+    {
+        public int user;
+        public string pass;
+    }
+
+    
+    private Credentials GetUserAndPass()
+    {
+        Debug.Log("Get user and pass");
+        Credentials credentials;
+        credentials.user = Browser.GetUser();
+        credentials.pass = Browser.GetPass();
+        return credentials;
+    }
     
     private void StartNoIndex()
     {
+        Debug.Log("StartNoIndex");
         FeedbackLabelManager.Instance.ShowError("No scene index passed. Started for testing only. Not all function will be available.");
         InitializeBuilder();
     }
@@ -115,16 +190,60 @@ public class SceneManagement : MonoBehaviour
         InitializeBuilder();
     }
 
+    
     private void StartTrue()
     {
-        //TODO: API connection
+        Debug.Log("Start True");
+        _builderAPI.token = _token;
+        _builderAPI.LoadScene(LoadSceneCallback, _sceneId);
     }
 
+    private void StartWithSceneData()
+    {
+        Debug.Log("Start with scene Data");
+        _sceneId = Browser.GetSceneId();
+        if (_sceneId == -1)
+            StartNoIndex();
+        else
+            StartTrue();
+    }
+
+    private void LoadSceneCallback(string json)
+    {
+        Debug.Log("Load scene callback" + json);
+        var response = JsonUtility.FromJson<GetSceneResponseData>(json);
+        if (response.statusCode == StatusCode.SUCCESS)
+        {
+            AssignValuesFromJsonToScene(response.data);
+        }
+        else
+        {
+            FeedbackLabelManager.Instance.ShowError(response.message);
+            chunks.x = 1;
+            chunks.y = 1;
+        }
+        InitializeBuilder();
+    }
+    
+    private void AssignValuesFromJsonToScene(SceneData sceneData)
+    {
+        // var sceneData = JsonUtility.FromJson<SceneData>(data);
+        chunks.x = sceneData.chunksX;
+        chunks.y = sceneData.chunksY;
+        // sceneData.
+
+        if (chunks.x == 0) chunks.x = 1;
+        if (chunks.y == 0) chunks.y = 1;
+    }
+    
     private void InitializeBuilder()
     {
+        Debug.Log("Initialize Builder");
         CreateChunks();
         SetCameraPosition();
         CreateWalls();
+        if(_sceneData != null) Load();
+        BuilderUI.Instance.loadingSceneLabel.SetActive(false);
     }
 
     private void CreateChunks()
@@ -198,7 +317,7 @@ public class SceneManagement : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, 1000, layerMask))
             {
-                print(hit.transform.gameObject.name);
+                Debug.Log(hit.transform.gameObject.name);
                 if (Navbar.Instance.isMouseInside) return;
 
                 if (hit.transform.tag == "Selectable")
@@ -236,7 +355,7 @@ public class SceneManagement : MonoBehaviour
     {
         if (TransformModal.instance != null && !TransformModal.instance.isMouseInside)
         {
-            print(_selectedObjectOutline);
+            Debug.Log(_selectedObjectOutline);
 
             if (_selectedObjectOutline != null)
                 _selectedObjectOutline.enabled = false;
@@ -283,7 +402,7 @@ public class SceneManagement : MonoBehaviour
 
     public Transform GetChunk(int x, int y)
     {
-        print($"{x}, {y}");
+        Debug.Log($"{x}, {y}");
         return _chunksRenderers[y][x].transform;
     }
 
@@ -373,15 +492,28 @@ public class SceneManagement : MonoBehaviour
             i++;
         }
 
-        var json = JsonUtility.ToJson(data);
-        print(json);
+        var saveSceneData = new SaveSceneData();
+        saveSceneData.title = data.name;
+        saveSceneData.data = data;
+        
+        _builderAPI.SaveScene(SaveCallback, saveSceneData, _sceneId);
     }
 
+    private void SaveCallback(string response)
+    {
+        FeedbackLabelManager.Instance.ShowSuccess("Scene saved.");
+    }
+    
+    public void Save(APIConnection.ConnectionCallback callback, int? id = null)
+    {
+        if (id != null)
+            _builderAPI.CreateScene(callback, null);
+    }
 
     public void Load()
     {
         var sceneData = JsonUtility.FromJson<SceneData>(json.text);
-        print(sceneData);
+        Debug.Log(sceneData);
         Load(sceneData);
     }
 
@@ -627,6 +759,7 @@ public class SceneManagement : MonoBehaviour
         previewCanvas.gameObject.SetActive(true);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        floorRuler.SetActive(true);
         _previewMode = true;
     }
 
@@ -639,6 +772,7 @@ public class SceneManagement : MonoBehaviour
         previewCanvas.gameObject.SetActive(false);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        floorRuler.SetActive(false);
         _previewMode = false;
     }
 

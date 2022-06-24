@@ -112,7 +112,7 @@ public class SearchAssetMenu : Menu
                 thumbnail.SetTexture(texture);
 
                 thumbnail.button.onClick.AddListener(
-                    delegate { SceneManagement.instance.SetFloorTexture(texture); });
+                    delegate { SceneManagement.Instance.SetFloorTexture(texture); });
 
             }
             _thumbnails.Add(thumbnail);

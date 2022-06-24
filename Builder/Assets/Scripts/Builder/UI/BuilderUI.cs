@@ -1,11 +1,22 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using AssetPacks;
+using Console;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class BuilderUI : MonoBehaviour
 {
+    public static BuilderUI Instance; 
+    
+    private void Awake()
+    {
+        if (BuilderUI.Instance == null) Instance = this;
+        else throw new Exception("There are more than one BuilderUI instance.");
+    }
+
     private AssetPackManager _apm;
     private bool _sceneCountActive;
 
@@ -14,8 +25,10 @@ public class BuilderUI : MonoBehaviour
     public SearchAssetMenu searchAssetMenu;
     
     public SceneCounts sceneCountsPopup;
-
+    public GameObject loadingSceneLabel;
+    [FormerlySerializedAs("console")] public Terminal terminal;
     private Menu[] _menus;
+    private bool _consoleActivated;
 
 
     private void Start()
@@ -123,4 +136,12 @@ public class BuilderUI : MonoBehaviour
 
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            _consoleActivated = !_consoleActivated;
+            terminal.gameObject.SetActive(_consoleActivated);
+        }
+    }
 }

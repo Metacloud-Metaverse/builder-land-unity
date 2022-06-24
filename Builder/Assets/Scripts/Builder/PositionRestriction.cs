@@ -21,9 +21,9 @@ public class PositionRestriction : MonoBehaviour
 
     private void Start()
     {
-        _chunkSize = SceneManagement.instance.chunkSize;
-        _chunks = SceneManagement.instance.chunks;
-        _maxHeight = SceneManagement.instance.maxHeight;
+        _chunkSize = SceneManagement.Instance.chunkSize;
+        _chunks = SceneManagement.Instance.chunks;
+        _maxHeight = SceneManagement.Instance.maxHeight;
     }
 
     public void SetErrorMaterial()

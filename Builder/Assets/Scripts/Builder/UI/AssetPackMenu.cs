@@ -15,7 +15,7 @@ public class AssetPackMenu : Menu
     public Sprite defaultAssetPackImage;
     private void Start()
     {
-        SceneManagement.instance.loadedSceneCallback = LoadedSceneCallback;
+        SceneManagement.Instance.loadedSceneCallback = LoadedSceneCallback;
         CreateButtons();
         AssetPackManager.instance.DownloadAssetPacksImages(SetImages);
     }

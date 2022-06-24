@@ -17,14 +17,12 @@ public class Client: MonoBehaviourSingleton<Client>
     
     //test client:
     //name  user_1042
-    //token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0MiwiZ3Vlc3RfcHJpdmF0ZV9zZWNyZXQiOiJBQ18xODA5NGMyYTQ4NCIsImlhdCI6MTY1MTc2MzIyNiwiZXhwIjoxNjUxNzkyMDI2fQ.-zzIh5TkvLDPsBpInER5eDlZXGwerx1tHY7SxohgufA
+    //token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0MiwiZ3Vlc3RfcHJpdmF0ZV9zZWNyZXQiOiJBQ18xODA5NGMyYTQ4NCIsImlhdCI6MTY1NDc4Mzk1MiwiZXhwIjoxNjU0ODEyNzUyfQ.P615r-ET5SGcBaV3nTaU9HsohXYzNMesvkBrPVi-TZY
     //pass  AC_18094c2a484
     //id    42
 
     private void Start()
     {
-        print(Application.persistentDataPath);
-
         _userAPIHandler = new UserAPIHandler(this);
         _userAPIHandler.loginCallback = CallAfterLogin;
         if (LoadDataLocal())
@@ -38,7 +36,9 @@ public class Client: MonoBehaviourSingleton<Client>
     {
         _userAPIHandler.CreateGuestAndLogin();
     }
-
+    
+    
+    
     public void CreateGuest()
     {
         _userAPIHandler.CreateGuest();

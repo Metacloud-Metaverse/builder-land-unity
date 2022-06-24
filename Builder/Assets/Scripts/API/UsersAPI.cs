@@ -12,8 +12,7 @@ namespace APISystem
         private string _createGuestPath = "/user/generate-guest";
 
         public UsersAPI(MonoBehaviour invoker) : base(invoker) { }
-
-
+        
         public void CreateGuestAndConnect(APIConnection.ConnectionCallback createGuestCallback, APIConnection.ConnectionCallback loginCallback)
         {
             _invoker.StartCoroutine(CreateGuestAndConnectCoroutine(createGuestCallback, loginCallback));

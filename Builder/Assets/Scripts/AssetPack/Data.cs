@@ -10,13 +10,13 @@ public class Data : MonoBehaviour
 
     private void Start()
     {
-        _chunkSize = SceneManagement.instance.chunkSize;
+        _chunkSize = SceneManagement.Instance.chunkSize;
     }
 
 
     public void SetChunkParent()
     {
-        var parent = SceneManagement.instance.GetChunk(chunkX, chunkY);
+        var parent = SceneManagement.Instance.GetChunk(chunkX, chunkY);
         transform.SetParent(parent);
     }
 }

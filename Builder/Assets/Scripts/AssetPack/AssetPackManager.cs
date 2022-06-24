@@ -31,7 +31,10 @@ namespace AssetPacks
         private List<Asset> _temporalAssets = new List<Asset>();
         public List<Asset> temporalAssets { get { return _temporalAssets; } }
         public List<Data> sceneObjects { get; private set; }
-
+        // private string _assetsURL = "http://44.203.99.22";
+        private string _assetsDomain = "http://54.236.188.65";
+        private string _localAssetsDomain = "http://localhost:8888";
+        
         private void Awake()
         {
             if (_instance == null) _instance = this;
@@ -60,7 +63,7 @@ namespace AssetPacks
 
         private async Task DownloadAssetPackImage(string url, AssetPack assetPack)
         {
-            var www = UnityWebRequestTexture.GetTexture(url);
+            var www = UnityWebRequestTexture.GetTexture(CreateURL(url));
             await www.SendWebRequest();
 
             if (www.result != UnityWebRequest.Result.Success)
@@ -191,7 +194,7 @@ namespace AssetPacks
                     return ASSET_TYPE_MESH;
             }
 
-            throw new SystemException("Format not allowed: " + format);
+            throw new Exception("Format not allowed: " + format);
         }
 
 
@@ -215,7 +218,7 @@ namespace AssetPacks
             var go = Instantiate(prefab);
             go.SetActive(true);
             go.tag = "Selectable";
-            go.transform.position = SceneManagement.instance.GetMiddlePosition();
+            go.transform.position = SceneManagement.Instance.GetMiddlePosition();
             return go;
         }
 
@@ -223,7 +226,9 @@ namespace AssetPacks
         private async Task DownloadGLTF(AssetPack assetPack, AssetData assetData, bool temporal = false)
         {
             var gltf = new GltfImport();
-            var success = await gltf.Load(assetData.url);
+            var url = CreateURL(assetData.url);
+            Debug.Log("Preparing download from " + url);
+            var success = await gltf.Load(url);
             GameObject go;
 
             if (success)
@@ -255,7 +260,8 @@ namespace AssetPacks
             }
             else
             {
-                Debug.LogError("An error occurred while trying to download the gltf from " + assetData.url);
+                Debug.LogError("An error occurred while trying to download the gltf from " + url);
+                
                 FeedbackLabelManager.Instance.ShowError(_connectionToServerFailedMessage);
             }
         }
@@ -297,7 +303,7 @@ namespace AssetPacks
                 foreach (var objectData in sharedObject.objectsData)
                 {
                     var transform = SpawnAsset(asset).transform;
-                    transform.parent = SceneManagement.instance.GetChunk(objectData.chunkX, objectData.chunkY);
+                    transform.parent = SceneManagement.Instance.GetChunk(objectData.chunkX, objectData.chunkY);
                     transform.localPosition = new Vector3(objectData.positionX, objectData.positionY, objectData.positionZ);
                     transform.eulerAngles = new Vector3(objectData.rotationX, objectData.rotationY, objectData.rotationZ);
                     transform.localScale = new Vector3(objectData.scaleX, objectData.scaleY, objectData.scaleZ);
@@ -311,18 +317,18 @@ namespace AssetPacks
         private void AddColliders(GameObject go)
         {
             var filters = go.transform.GetChild(0).gameObject.GetComponentsInChildren<MeshFilter>();
-
-            if (filters.Length > 0)
-            {
-                for (int i = 0; i < filters.Length; i++)
-                {
-                    var collider = go.AddComponent<MeshCollider>();
-                    collider.sharedMesh = filters[i].mesh;
-                }
-            }
-            else
+            //TODO: Bug with mesh colliders in some models.
+            // if (filters.Length > 0)
+            // {
+            //     for (int i = 0; i < filters.Length; i++)
+            //     {
+            //         var collider = go.AddComponent<MeshCollider>();
+            //         collider.sharedMesh = filters[i].mesh;
+            //     }
+            // }
+            // else
             { 
-                var renderers = go.transform.GetChild(0).gameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+                var renderers = go.transform.GetChild(0).gameObject.GetComponentsInChildren<Renderer>();
                 var colliders = new BoxCollider[renderers.Length];
                 for (int i = 0; i < colliders.Length; i++)
                 {
@@ -340,7 +346,7 @@ namespace AssetPacks
 
         private async Task DownloadTexture(AssetPack assetPack, AssetData assetData, bool temporal = false)
         {
-            var www = UnityWebRequestTexture.GetTexture(assetData.url);
+            var www = UnityWebRequestTexture.GetTexture(CreateURL(assetData.url));
             await www.SendWebRequest();
 
             if (www.result != UnityWebRequest.Result.Success)
@@ -431,6 +437,11 @@ namespace AssetPacks
             return null;
         }
 
+        private string CreateURL(string path)
+        {
+            var domain = Application.isEditor ? _localAssetsDomain : _assetsDomain;
+            return domain + path;
+        }
 
     }
 }

@@ -15,12 +15,12 @@ public class SceneCounts : MonoBehaviour
 
     public void RefreshCounts()
     {
-        _chunksCountText.text = $"{SceneManagement.instance.chunks.x} x {SceneManagement.instance.chunks.y} LAND";
-        _chunksSizeText.text = $"{SceneManagement.instance.chunks.x * SceneManagement.instance.chunkSize.x} x {SceneManagement.instance.chunks.y * SceneManagement.instance.chunkSize.z} m";
-        _trianglesCountText.text = $"{SceneManagement.instance.GetTrianglesCount()}/{SceneManagement.instance.maxTriangles}";
-        _meshesCountText.text = $"{SceneManagement.instance.GetMeshesCount()}/{SceneManagement.instance.maxMeshes}";
-        _materialsCountText.text = $"{SceneManagement.instance.GetMaterialsCount()}/{SceneManagement.instance.maxMaterials}";
-        _texturesCountText.text = $"{SceneManagement.instance.GetTexturesCount()}/{SceneManagement.instance.maxTextures}";
+        _chunksCountText.text = $"{SceneManagement.Instance.chunks.x} x {SceneManagement.Instance.chunks.y} LAND";
+        _chunksSizeText.text = $"{SceneManagement.Instance.chunks.x * SceneManagement.Instance.chunkSize.x} x {SceneManagement.Instance.chunks.y * SceneManagement.Instance.chunkSize.z} m";
+        _trianglesCountText.text = $"{SceneManagement.Instance.GetTrianglesCount()}/{SceneManagement.Instance.maxTriangles}";
+        _meshesCountText.text = $"{SceneManagement.Instance.GetMeshesCount()}/{SceneManagement.Instance.maxMeshes}";
+        _materialsCountText.text = $"{SceneManagement.Instance.GetMaterialsCount()}/{SceneManagement.Instance.maxMaterials}";
+        _texturesCountText.text = $"{SceneManagement.Instance.GetTexturesCount()}/{SceneManagement.Instance.maxTextures}";
     }
 
     private void Update()
